@@ -22,11 +22,19 @@ public class Swift {
         case version
         case build(release: Bool, productName: String)
         
-        var arguments: [String] {
+        func arguments(tripleWasm: Bool = true) -> [String] {
             switch self {
             case .dump: return ["package", "dump-package"]
             case .version: return ["--version"]
-            case .build(let r, let p): return ["build", "-c", r ? "release" : "debug", "--product", p, "--enable-test-discovery", "--triple", "wasm32-unknown-wasi"]
+            case .build(let r, let p):
+                var args: [String] = ["build", "-c", r ? "release" : "debug", "--product", p, "--enable-test-discovery"]
+                if tripleWasm {
+                    args.append(contentsOf: ["--triple", "wasm32-unknown-wasi"])
+                    return args
+                } else {
+                    args.append(contentsOf: ["--build-path", "./.build/.native"])
+                    return args
+                }
             }
         }
     }
@@ -56,12 +64,13 @@ public class Swift {
     func buildAsync(
         _ productName: String,
         release: Bool = false,
+        tripleWasm: Bool = true,
         handler: @escaping (Result<String, Error>) -> Void
     ) -> Process {
         let process = Process()
         DispatchQueue.global(qos: .userInteractive).async {
             do {
-                let result = try self.execute(.build(release: release, productName: productName), process: process)
+                let result = try self.execute(.build(release: release, productName: productName), process: process, tripleWasm: tripleWasm)
                 handler(.success(result))
             } catch {
                 handler(.failure(error))
@@ -71,26 +80,25 @@ public class Swift {
     }
     
     @discardableResult
-    func build(_ productName: String, release: Bool = false) throws -> String {
-        try execute(.build(release: release, productName: productName), process: Process())
+    func build(_ productName: String, release: Bool = false, tripleWasm: Bool = true) throws -> String {
+        try execute(.build(release: release, productName: productName), process: Process(), tripleWasm: tripleWasm)
     }
     
     /// Swift command execution
     /// - Parameters:
     ///   - command: one of supported commands
     @discardableResult
-    private func execute(_ command: Command, process: Process) throws -> String {
+    private func execute(_ command: Command, process: Process, tripleWasm: Bool = true) throws -> String {
         let stdout = Pipe()
         let stderr = Pipe()
         
         process.currentDirectoryPath = context.dir.workingDirectory
         process.launchPath = launchPath
-        process.arguments = command.arguments
+        process.arguments = command.arguments(tripleWasm: tripleWasm)
         process.standardOutput = stdout
         process.standardError = stderr
         
         let outHandle = stdout.fileHandleForReading
-        outHandle.waitForDataInBackgroundAndNotify()
         
         process.launch()
         process.waitUntilExit()

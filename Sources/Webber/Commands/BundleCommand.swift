@@ -117,7 +117,7 @@ class BundleCommand: Command {
     
     func execute() throws {
         try products.forEach { product in
-            try build(product)
+            try build(product, alsoNative: serviceWorkerTarget == product)
             if !debug {
                 try optimize(product)
             }
@@ -130,7 +130,7 @@ class BundleCommand: Command {
     }
     
     /// Build swift into wasm (sync)
-    private func build(_ targetName: String) throws {
+    private func build(_ targetName: String, alsoNative: Bool = false) throws {
         context.command.console.output([
             ConsoleTextFragment(string: "Started building product ", style: .init(color: .brightGreen, isBold: true)),
             ConsoleTextFragment(string: targetName, style: .init(color: .brightYellow))
@@ -139,7 +139,12 @@ class BundleCommand: Command {
         let buildingStartedAt = Date()
         let buildingBar = context.command.console.loadingBar(title: "Building")
         buildingBar.start()
-        try swift.build(targetName, release: !debug)
+        try swift.build(targetName, release: !debug, tripleWasm: true)
+        if alsoNative {
+            // building non-wasi executable (usually for service worker to grab manifest json)
+            buildingBar.activity.title = "Grabbing info"
+            try swift.build(targetName, release: !debug, tripleWasm: false)
+        }
         buildingBar.succeed()
 
         context.command.console.clear(.line)
@@ -164,8 +169,8 @@ class BundleCommand: Command {
     private func cook() throws {
         try webber.cook(
             dev: debug,
-            appTarget: productTarget.lowercased(),
-            serviceWorkerTarget: serviceWorkerTarget?.lowercased() ?? "sw",
+            appTarget: productTarget,
+            serviceWorkerTarget: serviceWorkerTarget ?? "sw",
             type: appType
         )
     }
@@ -238,8 +243,27 @@ class BundleCommand: Command {
                 rebuildingWasmProcess = swift.buildAsync(product) { result in
                     switch result {
                     case .success:
-                        DispatchQueue.global(qos: .userInteractive).async {
-                            rebuild()
+                        if self.serviceWorkerTarget == product {
+                            rebuildingWasmProcess = self.swift.buildAsync(product, tripleWasm: false) { result in
+                                switch result {
+                                case .success:
+                                    DispatchQueue.global(qos: .userInteractive).async {
+                                        try? self.webber.recookManifestWithIndex(
+                                            dev:  self.debug,
+                                            appTarget: self.productTarget,
+                                            serviceWorkerTarget: self.serviceWorkerTarget ?? "sw",
+                                            type: self.appType
+                                        )
+                                        rebuild()
+                                    }
+                                case .failure(let error):
+                                    handleError(error)
+                                }
+                            }
+                        } else {
+                            DispatchQueue.global(qos: .userInteractive).async {
+                                rebuild()
+                            }
                         }
                     case .failure(let error):
                         handleError(error)

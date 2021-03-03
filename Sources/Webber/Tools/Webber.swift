@@ -18,6 +18,12 @@ struct Webber {
     let context: WebberContext
     let webberFolder = ".webber"
     let cwd: String
+    var devPath: String {
+        URL(fileURLWithPath: cwd).appendingPathComponent(point(true)).path
+    }
+    var releasePath: String {
+        URL(fileURLWithPath: cwd).appendingPathComponent(point(false)).path
+    }
     var entrypoint: String {
         URL(fileURLWithPath: cwd).appendingPathComponent("entrypoint").path
     }
@@ -36,66 +42,186 @@ struct Webber {
         try checkOrCreatePackageFile()
     }
     
+    struct CookSettings {
+        let appType: AppType
+        let dev: Bool
+        let point: String
+        let appJSURL, destURL, serviceWorkerJSURL, indexHTMLURL: URL
+        
+        init (webber: Webber, type: AppType, dev: Bool, appTarget: String, serviceWorkerTarget: String, type appType: AppType) {
+            self.appType = type
+            self.dev = dev
+            self.point = webber.point(dev)
+            let appTarget = appTarget.lowercased()
+            let serviceWorkerTarget = serviceWorkerTarget.lowercased()
+            appJSURL = URL(fileURLWithPath: webber.entrypoint)
+                .appendingPathComponent(point)
+                .appendingPathComponent(appTarget + ".js")
+            destURL = URL(fileURLWithPath: webber.cwd).appendingPathComponent(point)
+            serviceWorkerJSURL = URL(fileURLWithPath: webber.entrypoint)
+                .appendingPathComponent(point)
+                .appendingPathComponent(serviceWorkerTarget + ".js")
+            indexHTMLURL = URL(fileURLWithPath: webber.entrypoint)
+                .appendingPathComponent(point)
+                .appendingPathComponent("index.html")
+        }
+    }
+    
     func cook(dev: Bool, appTarget: String, serviceWorkerTarget: String, type appType: AppType) throws {
         let startedAt = Date()
-        let preparingBar = console.loadingBar(title: "Cooking web files")
-        preparingBar.start()
+        var preparingBar: ActivityIndicator<LoadingBar>? = console.loadingBar(title: "Cooking web files")
+        preparingBar?.start()
         try installDependencies()
         try checkOrCreateEntrypoint()
-        let point = self.point(dev)
+        let settings = CookSettings(webber: self, type: appType, dev: dev, appTarget: appTarget, serviceWorkerTarget: serviceWorkerTarget, type: appType)
         try createPointFolderInsideEntrypoint(dev: dev)
+        var manifest: Manifest?
+        if appType == .pwa {
+            preparingBar?.succeed()
+            console.clear(.line)
+            preparingBar = nil
+            manifest = try grabPWAManifest(dev: dev, serviceWorkerTarget: serviceWorkerTarget)
+        }
+        if preparingBar == nil {
+            preparingBar = console.loadingBar(title: "Cooking web files")
+            preparingBar?.start()
+        }
         var isDir : ObjCBool = false
-        let appJSURL = URL(fileURLWithPath: entrypoint)
-            .appendingPathComponent(point)
-            .appendingPathComponent(appTarget + ".js")
-        let appJSPath = appJSURL.path
+        let appJSPath = settings.appJSURL.path
         if !FileManager.default.fileExists(atPath: appJSPath, isDirectory: &isDir) {
             let js = self.js(dev: dev, wasmFilename: appTarget, type: appType)
             guard let data = js.data(using: .utf8), FileManager.default.createFile(atPath: appJSPath, contents: data) else {
-                throw WebberError.error("Unable to create \(appJSURL.lastPathComponent) file")
+                throw WebberError.error("Unable to create \(settings.appJSURL.lastPathComponent) file")
             }
         }
-        let destURL = URL(fileURLWithPath: cwd).appendingPathComponent(point)
-        try webpack(dev: dev, jsFile: appJSURL.lastPathComponent, destURL: destURL)
-        let serviceWorkerJSURL = URL(fileURLWithPath: entrypoint)
-            .appendingPathComponent(point)
-            .appendingPathComponent(serviceWorkerTarget + ".js")
-        let serviceWorkerJSPath = serviceWorkerJSURL.path
+        try webpack(dev: dev, jsFile: settings.appJSURL.lastPathComponent, destURL: settings.destURL)
+        let serviceWorkerJSPath = settings.serviceWorkerJSURL.path
         if appType == .pwa {
             if !FileManager.default.fileExists(atPath: serviceWorkerJSPath, isDirectory: &isDir) {
                 let js = self.js(dev: dev, wasmFilename: serviceWorkerTarget, type: appType, serviceWorker: true)
                 guard let data = js.data(using: .utf8), FileManager.default.createFile(atPath: serviceWorkerJSPath, contents: data) else {
-                    throw WebberError.error("Unable to create \(serviceWorkerJSURL.lastPathComponent) file")
+                    throw WebberError.error("Unable to create \(settings.serviceWorkerJSURL.lastPathComponent) file")
                 }
             }
-            try webpack(dev: dev, jsFile: serviceWorkerJSURL.lastPathComponent, destURL: destURL)
+            try webpack(dev: dev, jsFile: settings.serviceWorkerJSURL.lastPathComponent, destURL: settings.destURL)
         }
-        let indexHTMLURL = URL(fileURLWithPath: entrypoint)
-            .appendingPathComponent(point)
-            .appendingPathComponent("index.html")
-        let indexHTMLPath = indexHTMLURL.path
-        if !FileManager.default.fileExists(atPath: indexHTMLPath, isDirectory: &isDir) {
-            let index = self.index(
-                dev: dev,
-                appJS: appJSURL.lastPathComponent,
-                swJS: serviceWorkerJSURL.lastPathComponent,
-                type: appType
-            )
-            guard let data = index.data(using: .utf8), FileManager.default.createFile(atPath: indexHTMLPath, contents: data) else {
-                throw WebberError.error("Unable to create \(indexHTMLURL.lastPathComponent) file")
-            }
-        }
-        let newIndexPath = destURL
-            .appendingPathComponent(indexHTMLURL.lastPathComponent)
-            .path
-        try? FileManager.default.removeItem(atPath: newIndexPath)
-        try FileManager.default.copyItem(atPath: indexHTMLPath, toPath: newIndexPath)
-        preparingBar.succeed()
+        try? cookIndexFile(settings, manifest)
+        preparingBar?.succeed()
         console.clear(.line)
         console.output([
             ConsoleTextFragment(string: "Cooked web files in ", style: .init(color: .brightBlue, isBold: true)),
             ConsoleTextFragment(string: String(format: "%.2fs", Date().timeIntervalSince(startedAt)), style: .init(color: .brightMagenta))
         ])
+    }
+    
+    struct Manifest: Codable {
+        let themeColor: String
+        
+        private enum CodingKeys : String, CodingKey {
+            case themeColor = "theme_color"
+        }
+    }
+    
+    private func cookIndexFile(_ settings: CookSettings, _ manifest: Manifest?) throws {
+        let indexHTMLPath = settings.indexHTMLURL.path
+        var isDir : ObjCBool = false
+        if !FileManager.default.fileExists(atPath: indexHTMLPath, isDirectory: &isDir) {
+            let index = self.index(
+                dev: settings.dev,
+                appJS: settings.appJSURL.lastPathComponent,
+                swJS: settings.serviceWorkerJSURL.lastPathComponent,
+                type: settings.appType,
+                manifest: manifest
+            )
+            guard let data = index.data(using: .utf8), FileManager.default.createFile(atPath: indexHTMLPath, contents: data) else {
+                throw WebberError.error("Unable to create \(settings.indexHTMLURL.lastPathComponent) file")
+            }
+        }
+        let newIndexPath = settings.destURL
+            .appendingPathComponent(settings.indexHTMLURL.lastPathComponent)
+            .path
+        try? FileManager.default.removeItem(atPath: newIndexPath)
+        try FileManager.default.copyItem(atPath: indexHTMLPath, toPath: newIndexPath)
+    }
+    
+    func recookManifestWithIndex(dev: Bool, appTarget: String, serviceWorkerTarget: String, type appType: AppType) throws {
+        let manifest = try grabPWAManifest(dev: dev, serviceWorkerTarget: serviceWorkerTarget)
+        let settings = CookSettings(webber: self, type: appType, dev: dev, appTarget: appTarget, serviceWorkerTarget: serviceWorkerTarget, type: appType)
+        try cookIndexFile(settings, manifest)
+    }
+    
+    private func grabPWAManifest(dev: Bool, serviceWorkerTarget: String) throws -> Manifest? {
+        let executablePath = URL(fileURLWithPath: context.dir.workingDirectory)
+            .appendingPathComponent(".build")
+            .appendingPathComponent(".native")
+            .appendingPathComponent(dev ? "debug" : "release")
+            .appendingPathComponent(serviceWorkerTarget)
+            .path
+        var isDir : ObjCBool = false
+        guard FileManager.default.fileExists(atPath: executablePath, isDirectory: &isDir) else {
+            console.clear(.line)
+            console.output([
+                ConsoleTextFragment(string: "⚠️ Warning: unable to cook pwa manifest, executable wasn't built", style: .init(color: .brightYellow, isBold: true))
+            ])
+            return nil
+        }
+        let jsonString = try executeServiceWorkerToGrabManifest(path: executablePath)
+        guard let data = jsonString.data(using: .utf8) else {
+            console.clear(.line)
+            console.output([
+                ConsoleTextFragment(string: "⚠️ Warning: unable to cook pwa manifest, seems it is corrupted", style: .init(color: .brightYellow, isBold: true))
+            ])
+            return nil
+        }
+        do {
+            let manifest = try JSONDecoder().decode(Manifest.self, from: data)
+            if !FileManager.default.fileExists(atPath: devPath) {
+                try? FileManager.default.createDirectory(atPath: devPath, withIntermediateDirectories: false)
+            }
+            let manifestPath = URL(fileURLWithPath: devPath).appendingPathComponent("manifest.json").path
+            if FileManager.default.fileExists(atPath: manifestPath) {
+                try? FileManager.default.removeItem(atPath: manifestPath)
+            }
+            guard FileManager.default.createFile(atPath: manifestPath, contents: data) else {
+                console.clear(.line)
+                console.output([
+                    ConsoleTextFragment(string: "⚠️ Warning: unable to save pwa manifest", style: .init(color: .brightYellow, isBold: true))
+                ])
+                return nil
+            }
+            return manifest
+        } catch {
+            console.clear(.line)
+            console.output([
+                ConsoleTextFragment(string: "⚠️ Warning: unable to cook pwa manifest: \(error)", style: .init(color: .brightYellow, isBold: true))
+            ])
+            return nil
+        }
+    }
+    
+    private func executeServiceWorkerToGrabManifest(path: String) throws -> String {
+        let stdout = Pipe()
+        let process = Process()
+        process.launchPath = path
+        process.standardOutput = stdout
+        
+        let outHandle = stdout.fileHandleForReading
+
+        process.launch()
+        process.waitUntilExit()
+        
+        guard process.terminationStatus == 0 else {
+            let data = outHandle.readDataToEndOfFile()
+            guard data.count > 0, let error = String(data: data, encoding: .utf8) else {
+                throw WebberError.error("Service worker executable failed with code \(process.terminationStatus)")
+            }
+            throw WebberError.error("Service worker executable failed: \(error)")
+        }
+        let data = outHandle.readDataToEndOfFile()
+        guard data.count > 0, let manifest = String(data: data, encoding: .utf8) else {
+            throw WebberError.error("Service worker executable failed: empty string has been returned")
+        }
+        return manifest
     }
     
     private func createPointFolderInsideEntrypoint(dev: Bool) throws {
@@ -109,7 +235,7 @@ struct Webber {
         }
     }
     
-    private func point(_ dev: Bool) -> String {
+    fileprivate func point(_ dev: Bool) -> String {
         dev ? "dev" : "release"
     }
     

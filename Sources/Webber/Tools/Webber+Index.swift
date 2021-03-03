@@ -6,29 +6,19 @@
 //
 
 extension Webber {
-    func index(dev: Bool = false, appJS: String, swJS: String, type: AppType = .spa) -> String {
+    func index(dev: Bool = false, appJS: String, swJS: String, type: AppType = .spa, manifest: Manifest?) -> String {
         var headlines: [String] = []
         headlines.append(#"<title>&lrm;</title>"#)
         headlines.append(#"<meta charset="utf-8" />"#)
         headlines.append(#"<meta name="viewport" content="width=device-width, initial-scale=1" />"#)
         headlines.append(#"<meta name="description" content="An awesome Swift web app">"#)
         if type == .pwa {
-            headlines.append(#"<meta name="theme-color" content="white" />"#)
+            if let manifest = manifest {
+                headlines.append("<meta name=\"theme-color\" content=\"\(manifest.themeColor)\">")
+            }
             headlines.append(#"<link rel="manifest" href="./manifest.json">"#)
         }
         headlines.append("<script type=\"text/javascript\" src=\"\(appJS)\" async></script>")
-        if type == .pwa {
-            headlines.append("""
-            <script type=\"text/javascript\">
-            window.onload = () => {
-                  'use strict';
-                  if ('serviceWorker' in navigator) {
-                      navigator.serviceWorker.register('./\(swJS)');
-                  }
-            }
-            </script>
-            """)
-        }
         let style = """
         <style>
         * { box-sizing: border-box; }
