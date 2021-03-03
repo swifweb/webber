@@ -92,7 +92,7 @@ struct Webber {
         var isDir : ObjCBool = false
         let appJSPath = settings.appJSURL.path
         if !FileManager.default.fileExists(atPath: appJSPath, isDirectory: &isDir) {
-            let js = self.js(dev: dev, wasmFilename: appTarget, type: appType)
+            let js = self.js(dev: dev, wasmFilename: appTarget.lowercased(), type: appType)
             guard let data = js.data(using: .utf8), FileManager.default.createFile(atPath: appJSPath, contents: data) else {
                 throw WebberError.error("Unable to create \(settings.appJSURL.lastPathComponent) file")
             }
@@ -101,7 +101,7 @@ struct Webber {
         let serviceWorkerJSPath = settings.serviceWorkerJSURL.path
         if appType == .pwa {
             if !FileManager.default.fileExists(atPath: serviceWorkerJSPath, isDirectory: &isDir) {
-                let js = self.js(dev: dev, wasmFilename: serviceWorkerTarget, type: appType, serviceWorker: true)
+                let js = self.js(dev: dev, wasmFilename: serviceWorkerTarget.lowercased(), type: appType, serviceWorker: true)
                 guard let data = js.data(using: .utf8), FileManager.default.createFile(atPath: serviceWorkerJSPath, contents: data) else {
                     throw WebberError.error("Unable to create \(settings.serviceWorkerJSURL.lastPathComponent) file")
                 }
