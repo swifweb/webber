@@ -27,6 +27,12 @@ On macOS `webber` can be installed with Homebrew. Make sure you have Homebrew in
 brew install swifweb/tap/webber
 ```
 
+to update already installed version run
+
+```bash
+brew upgrade webber
+```
+
 ## Usage
 
 If you already have a project then just go to its folder in console
