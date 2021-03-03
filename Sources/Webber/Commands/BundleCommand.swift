@@ -125,8 +125,7 @@ class BundleCommand: Command {
         
         try cook()
         try moveWasmFiles()
-        
-        // TODO: copy files into `Bundle` folder
+        try webber.moveResources(dev: debug)
     }
     
     /// Build swift into wasm (sync)
@@ -142,8 +141,9 @@ class BundleCommand: Command {
         try swift.build(targetName, release: !debug, tripleWasm: true)
         if alsoNative {
             // building non-wasi executable (usually for service worker to grab manifest json)
+            // should be built in debug cause of compile error in JavaScriptKit in release mode
             buildingBar.activity.title = "Grabbing info"
-            try swift.build(targetName, release: !debug, tripleWasm: false)
+            try swift.build(targetName, release: false, tripleWasm: false)
         }
         buildingBar.succeed()
 
@@ -224,6 +224,7 @@ class BundleCommand: Command {
                     self.context.command.console.clear(.line)
                     do {
                         try self.moveWasmFiles()
+                        try self.webber.moveResources(dev: debug)
                     } catch {
                         handleError(error)
                     }

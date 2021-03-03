@@ -50,7 +50,14 @@ final class WebberMiddleware: Middleware {
         
         // create absolute file path
         let fileURL = publicDirectory.appendingPathComponent(path)
+        let fileInResourcesURL = publicDirectory.appendingPathComponent(".resources").appendingPathComponent(path)
         let filePath = fileURL.path
+        
+        /// Stream file from .resources directory if it doesn't exists in the root directory
+        if FileManager.default.fileExists(atPath: fileInResourcesURL.path) && !FileManager.default.fileExists(atPath: fileURL.path) {
+            let res = request.fileio.streamFile(at: fileInResourcesURL.path)
+            return request.eventLoop.makeSucceededFuture(res)
+        }
 
         /// robots.txt placeholder for Lighthouse
         guard fileURL.lastPathComponent != "robots.txt" else {

@@ -71,6 +71,9 @@ struct Webber {
         let startedAt = Date()
         var preparingBar: ActivityIndicator<LoadingBar>? = console.loadingBar(title: "Cooking web files")
         preparingBar?.start()
+        if !dev {
+            try? FileManager.default.removeItem(atPath: releasePath)
+        }
         try installDependencies()
         try checkOrCreateEntrypoint()
         let settings = CookSettings(webber: self, type: appType, dev: dev, appTarget: appTarget, serviceWorkerTarget: serviceWorkerTarget, type: appType)
@@ -154,7 +157,7 @@ struct Webber {
         let executablePath = URL(fileURLWithPath: context.dir.workingDirectory)
             .appendingPathComponent(".build")
             .appendingPathComponent(".native")
-            .appendingPathComponent(dev ? "debug" : "release")
+            .appendingPathComponent("debug")
             .appendingPathComponent(serviceWorkerTarget)
             .path
         var isDir : ObjCBool = false
@@ -175,10 +178,11 @@ struct Webber {
         }
         do {
             let manifest = try JSONDecoder().decode(Manifest.self, from: data)
-            if !FileManager.default.fileExists(atPath: devPath) {
-                try? FileManager.default.createDirectory(atPath: devPath, withIntermediateDirectories: false)
+            let resultDir = dev ? devPath : releasePath
+            if !FileManager.default.fileExists(atPath: resultDir) {
+                try? FileManager.default.createDirectory(atPath: resultDir, withIntermediateDirectories: false)
             }
-            let manifestPath = URL(fileURLWithPath: devPath).appendingPathComponent("manifest.json").path
+            let manifestPath = URL(fileURLWithPath: resultDir).appendingPathComponent("manifest.json").path
             if FileManager.default.fileExists(atPath: manifestPath) {
                 try? FileManager.default.removeItem(atPath: manifestPath)
             }
@@ -338,6 +342,35 @@ struct Webber {
             .appendingPathComponent("\(productName.lowercased()).wasm")
         try? FileManager.default.removeItem(at: wasm)
         try FileManager.default.copyItem(at: originalWasm, to: wasm)
+    }
+    
+    func moveResources(dev: Bool = false) throws {
+        var destFolder = URL(fileURLWithPath: context.dir.workingDirectory)
+            .appendingPathComponent(".webber")
+            .appendingPathComponent(dev ? "dev" : "release")
+        if dev {
+            destFolder = destFolder.appendingPathComponent(".resources")
+            try? FileManager.default.removeItem(atPath: destFolder.path)
+        }
+        let buildFolder = URL(fileURLWithPath: context.dir.workingDirectory)
+            .appendingPathComponent(".build")
+            .appendingPathComponent(dev ? "debug" : "release")
+        guard let resourceFolders = try? FileManager.default.contentsOfDirectory(atPath: buildFolder.path).filter({ $0.hasSuffix(".resources") }) else {
+            return
+        }
+        guard resourceFolders.count > 0 else { return }
+        try? FileManager.default.createDirectory(atPath: destFolder.path, withIntermediateDirectories: false)
+        resourceFolders.forEach {
+            let fromFolderURL = buildFolder.appendingPathComponent($0)
+            guard let files = try? FileManager.default.contentsOfDirectory(atPath: fromFolderURL.path), files.count > 0 else {
+                return
+            }
+            files.forEach {
+                let fromFile = fromFolderURL.appendingPathComponent($0).path
+                try? FileManager.default.copyItem(atPath: fromFile, toPath: destFolder.appendingPathComponent($0).path)
+                try? FileManager.default.removeItem(atPath: fromFile)
+            }
+        }
     }
     
     enum WebberError: Error, CustomStringConvertible {
