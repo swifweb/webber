@@ -126,7 +126,6 @@ struct Npm {
         process.standardOutput = stdout
         
         let outHandle = stdout.fileHandleForReading
-        outHandle.waitForDataInBackgroundAndNotify()
 
         process.launch()
         process.waitUntilExit()
@@ -134,7 +133,7 @@ struct Npm {
         guard process.terminationStatus == 0 else {
             throw NpmError.unableToInstall
         }
-        let data = stdout.fileHandleForReading.availableData
+        let data = outHandle.readDataToEndOfFile()
         guard data.count > 0, let list = String(data: data, encoding: .utf8) else {
             throw NpmError.error("Unable to get list of packages from npm")
         }

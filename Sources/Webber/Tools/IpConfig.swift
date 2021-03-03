@@ -22,8 +22,7 @@ struct IpConfig {
         process.standardOutput = stdout
         
         let outHandle = stdout.fileHandleForReading
-        outHandle.waitForDataInBackgroundAndNotify()
-
+        
         process.launch()
         process.waitUntilExit()
         
@@ -31,7 +30,7 @@ struct IpConfig {
             return nil
         }
         
-        let data = stdout.fileHandleForReading.availableData
+        let data = outHandle.readDataToEndOfFile()
         guard data.count > 0, let path = String(data: data, encoding: .utf8) else {
             return nil
         }

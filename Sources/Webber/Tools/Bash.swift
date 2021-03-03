@@ -36,7 +36,6 @@ struct Bash {
         process.standardOutput = stdout
         
         let outHandle = stdout.fileHandleForReading
-        outHandle.waitForDataInBackgroundAndNotify()
 
         process.launch()
         process.waitUntilExit()
@@ -45,7 +44,7 @@ struct Bash {
             throw WhichError.notFound(program: program)
         }
         
-        let data = stdout.fileHandleForReading.availableData
+        let data = outHandle.readDataToEndOfFile()
         guard data.count > 0, let path = String(data: data, encoding: .utf8) else {
             throw WhichError.notFound(program: program)
         }

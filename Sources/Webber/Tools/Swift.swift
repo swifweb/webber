@@ -96,7 +96,7 @@ public class Swift {
         process.waitUntilExit()
         
         guard process.terminationStatus == 0 else {
-            let data = stdout.fileHandleForReading.availableData
+            let data = outHandle.readDataToEndOfFile()
             guard data.count > 0, let rawError = String(data: data, encoding: .utf8) else {
                 throw SwiftError.text("Build failed with exit code \(process.terminationStatus)")
             }
@@ -195,7 +195,7 @@ public class Swift {
                     }
                 } catch {
                     context.command.console.output([
-                        ConsoleTextFragment(string: "Compilation failed\n", style: .init(color: .brightMagenta)),
+                        ConsoleTextFragment(string: "Compilation failed: \(error)\n", style: .init(color: .brightMagenta)),
                         ConsoleTextFragment(string: rawError, style: .init(color: .brightRed))
                     ])
                     throw errorLastLine
@@ -211,7 +211,7 @@ public class Swift {
         }
         
         do {
-            let data = outHandle.availableData
+            let data = outHandle.readDataToEndOfFile()
             guard data.count > 0 else { return "" }
             guard let result = String(data: data, encoding: .utf8) else {
                 throw SwiftError.text("Unable to read stdout")

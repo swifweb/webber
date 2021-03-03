@@ -134,13 +134,12 @@ struct Webber {
         process.standardOutput = stdout
         
         let outHandle = stdout.fileHandleForReading
-        outHandle.waitForDataInBackgroundAndNotify()
 
         process.launch()
         process.waitUntilExit()
         
         guard process.terminationStatus == 0 else {
-            let data = stdout.fileHandleForReading.availableData
+            let data = outHandle.readDataToEndOfFile()
             guard data.count > 0, let error = String(data: data, encoding: .utf8) else {
                 throw WebberError.error("Webpack command failed")
             }
