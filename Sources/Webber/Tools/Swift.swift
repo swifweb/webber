@@ -285,8 +285,23 @@ public class Swift {
         struct Package: Decodable {
             struct Dependency: Decodable {
                 let name: String
-                let requirement: [String: String?]?
+                let local: Bool
                 let url: String?
+                
+                private enum CodingKeys : String, CodingKey {
+                    case name, requirement, url
+                }
+                
+                init(from decoder: Decoder) throws {
+                    let container = try decoder.container(keyedBy: CodingKeys.self)
+                    name = try container.decode(String.self, forKey: .name)
+                    if let requirement = try? container.decode([String: String?].self, forKey: .requirement) {
+                        local = requirement.keys.contains("localPackage") == true
+                    } else {
+                        local = false
+                    }
+                    url = try container.decode(String.self, forKey: .url)
+                }
             }
             let dependencies: [Dependency]?
         }
@@ -295,7 +310,7 @@ public class Swift {
         }
         let package = try JSONDecoder().decode(Package.self, from: data)
         return package.dependencies?
-            .filter { $0.requirement?.keys.contains("localPackage") == true }
+            .filter { $0.local }
             .compactMap { $0.url }
             .filter { !$0.hasPrefix("../") && !$0.hasPrefix("./") }
             .map { $0 + "/Sources" }
