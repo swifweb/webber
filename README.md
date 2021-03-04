@@ -3,7 +3,7 @@
         <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg" alt="MIT License">
     </a>
     <a href="https://swift.org">
-        <img src="https://img.shields.io/badge/swift-5.3-brightgreen.svg" alt="Swift 5.2">
+        <img src="https://img.shields.io/badge/swift-5.3-brightgreen.svg" alt="Swift 5.3">
     </a>
     <a href="https://discord.gg/q5wCPYv">
         <img src="https://img.shields.io/discord/612561840765141005" alt="Swift.Stream">
@@ -39,7 +39,19 @@ If you already have a project then just go to its folder in console
 
 If you don't then manually `git clone` a template and then go to its directory
 
-> // TODO: implement `webber new` command to easily create new projects automatically
+### New project
+
+You could either clone one of templates from swifweb organization repos or you could use `webber`
+
+single page app
+```bash
+webber new spa MyApp
+```
+
+progressive web app
+```bash
+webber new pwa MyApp
+```
 
 ### Development
 
