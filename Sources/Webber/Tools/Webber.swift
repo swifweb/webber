@@ -69,8 +69,9 @@ struct Webber {
     
     func cook(dev: Bool, appTarget: String, serviceWorkerTarget: String, type appType: AppType) throws {
         let startedAt = Date()
-        var preparingBar: ActivityIndicator<LoadingBar>? = console.loadingBar(title: "Cooking web files")
-        preparingBar?.start()
+        console.output([
+            ConsoleTextFragment(string: "Cooking web files, please wait", style: .init(color: .brightYellow))
+        ])
         if !dev {
             try? FileManager.default.removeItem(atPath: releasePath)
         }
@@ -80,14 +81,7 @@ struct Webber {
         try createPointFolderInsideEntrypoint(dev: dev)
         var manifest: Manifest?
         if appType == .pwa {
-            preparingBar?.succeed()
-            console.clear(.line)
-            preparingBar = nil
             manifest = try grabPWAManifest(dev: dev, serviceWorkerTarget: serviceWorkerTarget)
-        }
-        if preparingBar == nil {
-            preparingBar = console.loadingBar(title: "Cooking web files")
-            preparingBar?.start()
         }
         var isDir : ObjCBool = false
         let appJSPath = settings.appJSURL.path
@@ -109,7 +103,6 @@ struct Webber {
             try webpack(dev: dev, jsFile: settings.serviceWorkerJSURL.lastPathComponent, destURL: settings.destURL)
         }
         try? cookIndexFile(settings, manifest)
-        preparingBar?.succeed()
         console.clear(.line)
         console.output([
             ConsoleTextFragment(string: "Cooked web files in ", style: .init(color: .brightBlue, isBold: true)),

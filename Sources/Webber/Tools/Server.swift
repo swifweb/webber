@@ -83,8 +83,9 @@ class Server {
             if !FileManager.default.fileExists(atPath: ssl.path, isDirectory: &isDir) {
                 try FileManager.default.createDirectory(at: ssl, withIntermediateDirectories: false, attributes: nil)
             }
-            let sslBar = context.console.loadingBar(title: "Generating self-signed SSL certificate")
-            sslBar.start()
+            context.console.output([
+                ConsoleTextFragment(string: "Generating self-signed SSL certificate", style: .init(color: .brightYellow, isBold: true))
+            ])
             let configURL = ssl.appendingPathComponent("conf.cnf")
             do {
                 let config = """
@@ -111,7 +112,6 @@ class Server {
                 try? FileManager.default.removeItem(at: configURL)
                 throw error
             }
-            sslBar.succeed()
             context.console.clear(.line)
             context.console.output([
                 ConsoleTextFragment(string: "Generated self-signed SSL certificate", style: .init(color: .brightBlue, isBold: true))

@@ -281,7 +281,7 @@ class BundleCommand: Command {
         var needOneMoreRecook = false
         func recookEntrypoint() {
             guard !isRecooking else {
-                needOneMoreRecook = true
+//                needOneMoreRecook = true
                 return
             }
             isRecooking = true
