@@ -79,9 +79,11 @@ class Server {
     
     private func certificates(ssl: URL, key: URL, cert: URL) throws -> [NIOSSLCertificateSource] {
         if !FileManager.default.fileExists(atPath: key.path) || !FileManager.default.fileExists(atPath: cert.path) {
-            var isDir : ObjCBool = true
+            var isDir : ObjCBool = false
             if !FileManager.default.fileExists(atPath: ssl.path, isDirectory: &isDir) {
                 try FileManager.default.createDirectory(at: ssl, withIntermediateDirectories: false, attributes: nil)
+            } else if isDir.boolValue {
+                throw ServerError.error("SSL path is unexpectedly file, not a folder: \(ssl.path)")
             }
             context.console.output([
                 ConsoleTextFragment(string: "Generating self-signed SSL certificate", style: .init(color: .brightYellow, isBold: true))
