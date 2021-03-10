@@ -13,21 +13,39 @@ class DirectoryMonitor {
     var fileDescriptor: Int32 = -1
     var dispatchSource: DispatchSourceFileSystemObject?
     
+    enum Mode { case dir, file }
+    
     let url: URL
-    let singleFile: Bool
-    let watchSubdirectoryCreation: Bool
+    let mode: Mode
+    let parent: DirectoryMonitor?
     
-    var subfolders: [String] = []
-    var subfolderMonitors: [DirectoryMonitor] = []
-    
-    init(_ url: URL, singleFile: Bool = false, watchSubdirectoryCreation: Bool = false) {
-        self.url = url
-        self.singleFile = singleFile
-        self.watchSubdirectoryCreation = watchSubdirectoryCreation
+    /// when child changed it should update this flag at its parent
+    private var _childChanged = false
+    private var childChanged: Bool {
+        get { _childChanged }
+        set {
+            _childChanged = newValue
+            Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { _ in
+                guard self._childChanged else { return }
+                self._childChanged = false
+            }
+        }
     }
     
-    convenience init(_ path: String, singleFile: Bool = false, watchSubdirectoryCreation: Bool = false) {
-        self.init(URL(fileURLWithPath: path), singleFile: singleFile, watchSubdirectoryCreation: watchSubdirectoryCreation)
+    private var submonitors: [String: DirectoryMonitor] = [:]
+    
+    private var lastChangedDate: Date?
+    
+    init(_ url: URL, parent: DirectoryMonitor? = nil) {
+        self.url = url
+        var isDir : ObjCBool = false
+        FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
+        self.mode = isDir.boolValue ? .dir : .file
+        self.parent = parent
+    }
+    
+    convenience init(_ path: String, watchSubdirectoryCreation: Bool = false) {
+        self.init(URL(fileURLWithPath: path))
     }
     
     @discardableResult
@@ -38,12 +56,18 @@ class DirectoryMonitor {
             return content.filter {
                 let path = url.appendingPathComponent($0).path
                 var isDir: ObjCBool = false
-                return FileManager.default.fileExists(atPath: path, isDirectory: &isDir) && isDir.boolValue
+                return FileManager.default.fileExists(atPath: path, isDirectory: &isDir)
+            }
+        }
+        func checkSubfolders() {
+            scanSubfolders().forEach { relativePath in
+                guard !self.submonitors.keys.contains(relativePath) else { return }
+                self.submonitors[relativePath] = DirectoryMonitor(self.url.appendingPathComponent(relativePath), parent: self).startMonitoring(closure)
             }
         }
         
-        if watchSubdirectoryCreation {
-            subfolders = scanSubfolders()
+        if mode == .dir {
+            checkSubfolders()
         }
         
         fileDescriptor = open(url.path, O_EVTONLY)
@@ -51,8 +75,19 @@ class DirectoryMonitor {
         
         dispatchSource = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fileDescriptor, eventMask: .all, queue: dispatchQueue)
         dispatchSource?.setEventHandler {
+            if let lastChangedDate = self.lastChangedDate {
+                if Date().timeIntervalSince(lastChangedDate) < 1 {
+                    self.lastChangedDate = Date()
+                    return
+                }
+            }
             guard let data = self.dispatchSource?.data else { return }
-            if self.singleFile {
+            switch self.mode {
+            case .file:
+                self.parent?.childChanged = true
+                // don't react on only attributes change
+                guard data.rawValue != DispatchSource.FileSystemEvent.attrib.rawValue else { return }
+                self.lastChangedDate = Date()
                 closure()
                 if data.contains(.link) {
                     self.dispatchSource?.cancel()
@@ -60,26 +95,26 @@ class DirectoryMonitor {
                         self.startMonitoring(closure)
                     }
                 }
-                return
-            }
-            closure()
-            guard self.watchSubdirectoryCreation == true else { return }
-            guard data.contains(.write) else { return }
-            scanSubfolders().forEach {
-                guard !self.subfolders.contains($0) else { return }
-                self.subfolders.append($0)
-                self.subfolderMonitors.append(DirectoryMonitor(self.url.appendingPathComponent($0), watchSubdirectoryCreation: true).startMonitoring(closure))
+            case .dir:
+                guard !self.childChanged else {
+                    self.childChanged = false
+                    return
+                }
+                self.parent?.childChanged = true
+                self.lastChangedDate = Date()
+                closure()
+                guard data.contains(.write) else { return }
+                checkSubfolders()
             }
         }
         dispatchSource?.setCancelHandler {
             close(self.fileDescriptor)
-            
             self.fileDescriptor = -1
             self.dispatchSource = nil
-            self.subfolderMonitors.forEach { $0.stopMonitoring() }
+            self.submonitors.forEach { $0.value.stopMonitoring() }
         }
         dispatchSource?.resume()
-        
+
         return self
     }
     

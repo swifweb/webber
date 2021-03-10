@@ -182,25 +182,38 @@ class BundleCommand: Command {
         }
     }
     
+    lazy var rebuildQueue = DispatchQueue(label: "webber.rebuilder")
+    private var lastRebuildRequestedAt: Date?
+    
     func watchForFileChanges() throws {
         var rebuildingWasmProcess: Process?
         var isRebuilding = false
         var needOneMoreRebuilding = false
         func rebuildWasm() {
             guard !isRebuilding else {
+                if let lastRebuildRequestedAt = lastRebuildRequestedAt {
+                    if Date().timeIntervalSince(lastRebuildRequestedAt) < 2 {
+                        return
+                    }
+                }
                 needOneMoreRebuilding = true
                 return
             }
+            lastRebuildRequestedAt = Date()
             isRebuilding = true
             if let process = rebuildingWasmProcess {
                 if process.isRunning {
+                    self.context.command.console.clear(.line)
                     process.terminate()
                 }
             }
             rebuildingWasmProcess = nil
             let buildingStartedAt = Date()
-            let buildingBar = context.command.console.loadingBar(title: "Rebuilding")
-            buildingBar.start()
+            
+            console.output([
+                ConsoleTextFragment(string: "Rebuilding, please wait...", style: .init(color: .brightYellow))
+            ])
+            
             let finishRebuilding = {
                 isRebuilding = false
                 if needOneMoreRebuilding {
@@ -209,7 +222,6 @@ class BundleCommand: Command {
                 }
             }
             let handleError: (Error) -> Void = { error in
-                buildingBar.fail()
                 self.context.command.console.clear(.line)
                 self.context.command.console.output([
                     ConsoleTextFragment(string: "Rebuilding error: \(error)", style: .init(color: .brightRed))
@@ -220,7 +232,12 @@ class BundleCommand: Command {
             productsToRebuild.append(contentsOf: products)
             func rebuild() {
                 guard productsToRebuild.count > 0 else {
-                    buildingBar.succeed()
+                    try? self.webber.recookManifestWithIndex(
+                        dev:  self.debug,
+                        appTarget: self.productTarget,
+                        serviceWorkerTarget: self.serviceWorkerTarget ?? "sw",
+                        type: self.appType
+                    )
                     self.context.command.console.clear(.line)
                     do {
                         try self.moveWasmFiles()
@@ -249,12 +266,6 @@ class BundleCommand: Command {
                                 switch result {
                                 case .success:
                                     DispatchQueue.global(qos: .userInteractive).async {
-                                        try? self.webber.recookManifestWithIndex(
-                                            dev:  self.debug,
-                                            appTarget: self.productTarget,
-                                            serviceWorkerTarget: self.serviceWorkerTarget ?? "sw",
-                                            type: self.appType
-                                        )
                                         rebuild()
                                     }
                                 case .failure(let error):
@@ -303,28 +314,40 @@ class BundleCommand: Command {
                 }
             }
         }
-        FS.watchFile(URL(fileURLWithPath: dir.workingDirectory).appendingPathComponent("Package.swift")) {
+        FS.watch(URL(fileURLWithPath: dir.workingDirectory).appendingPathComponent("Package.swift")) {
             try? self.swift.lookupLocalDependencies().forEach {
                 guard !FS.contains(path: $0) else { return }
-                FS.watchDirectory($0) {
-                    rebuildWasm()
+                FS.watch($0) {
+                    self.rebuildQueue.sync {
+                        rebuildWasm()
+                    }
                 }
             }
-            rebuildWasm()
-        }
-        FS.watchFile(URL(fileURLWithPath: dir.workingDirectory).appendingPathComponent(".swift-version")) {
-            rebuildWasm()
-        }
-        FS.watchDirectory(URL(fileURLWithPath: dir.workingDirectory).appendingPathComponent("Sources")) {
-            rebuildWasm()
-        }
-        try swift.lookupLocalDependencies().forEach {
-            FS.watchDirectory($0) {
+            self.rebuildQueue.sync {
                 rebuildWasm()
             }
         }
-        FS.watchDirectory(webber.entrypoint) {
-            recookEntrypoint()
+        FS.watch(URL(fileURLWithPath: dir.workingDirectory).appendingPathComponent(".swift-version")) {
+            self.rebuildQueue.sync {
+                rebuildWasm()
+            }
+        }
+        FS.watch(URL(fileURLWithPath: dir.workingDirectory).appendingPathComponent("Sources")) {
+            self.rebuildQueue.sync {
+                rebuildWasm()
+            }
+        }
+        try swift.lookupLocalDependencies().forEach {
+            FS.watch($0) {
+                self.rebuildQueue.sync {
+                    rebuildWasm()
+                }
+            }
+        }
+        FS.watch(webber.entrypoint) {
+            self.rebuildQueue.sync {
+                recookEntrypoint()
+            }
         }
     }
     
