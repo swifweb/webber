@@ -91,27 +91,55 @@ public class Swift {
     private func execute(_ command: Command, process: Process, tripleWasm: Bool = true) throws -> String {
         let stdout = Pipe()
         let stderr = Pipe()
-        
+        #if DEBUG
+        switch command {
+        case .build:
+            context.command.console.output([
+                ConsoleTextFragment(string: launchPath, style: .init(color: .brightBlue, isBold: true)),
+                ConsoleTextFragment(string: " " + command.arguments(tripleWasm: tripleWasm).joined(separator: " ") + "\n", style: .init(color: .brightMagenta))
+            ])
+        default: break
+        }
+        #endif
         process.currentDirectoryPath = context.dir.workingDirectory
         process.launchPath = launchPath
         process.arguments = command.arguments(tripleWasm: tripleWasm)
         process.standardOutput = stdout
         process.standardError = stderr
         
-        let outHandle = stdout.fileHandleForReading
-        
+        var resultData = Data()
+        let group = DispatchGroup()
+        group.enter()
+        stdout.fileHandleForReading.readabilityHandler = { fh in
+            let data = fh.availableData
+            if data.isEmpty { // EOF on the pipe
+                stdout.fileHandleForReading.readabilityHandler = nil
+                group.leave()
+            } else {
+                resultData.append(data)
+            }
+        }
         process.launch()
         process.waitUntilExit()
-        
+        group.wait()
         guard process.terminationStatus == 0 else {
-            let data = outHandle.readDataToEndOfFile()
+            let data = resultData
             guard data.count > 0, let rawError = String(data: data, encoding: .utf8) else {
                 throw SwiftError.text("Build failed with exit code \(process.terminationStatus)")
             }
-            let errorLastLine = SwiftError.text("Unable to continue cause of failed compilation 🥺\n")
+            var errorsCount = 0
+            func errorLastLine() -> SwiftError {
+                var ending = ""
+                if errorsCount == 1 {
+                    ending = "found 1 error ❗️"
+                } else if errorsCount > 1 {
+                    ending = "found \(errorsCount) errors ❗️❗️❗️"
+                }
+                return SwiftError.text("Unable to continue cause of failed compilation 🥺 \(ending)\n")
+            }
             switch command {
             case .build:
-                struct CompilationError {
+                class CompilationError {
                     let file: URL
                     struct Place {
                         let line: Int
@@ -119,7 +147,12 @@ public class Swift {
                         let code: String
                         let pointer: String
                     }
-                    let places: [Place]
+                    var places: [Place]
+                    
+                    init (file: URL, places: [Place]) {
+                        self.file = file
+                        self.places = places
+                    }
                 }
                 do {
                     var errors: [CompilationError] = []
@@ -143,7 +176,19 @@ public class Swift {
                             let filePath = URL(fileURLWithPath: components[0])
                             func gracefulExit() {
                                 if places.count > 0 {
-                                    errors.append(.init(file: filePath, places: places))
+                                    if let error = errors.first(where: { $0.file == filePath }) {
+                                        places.forEach { place in
+                                            guard error.places.first(where: { $0.line == place.line && $0.reason == place.reason }) == nil
+                                                else { return }
+                                            error.places.append(place)
+                                            errorsCount += 1
+                                        }
+                                        error.places.sort(by: { $0.line < $1.line })
+                                    } else {
+                                        places.sort(by: { $0.line < $1.line })
+                                        errorsCount += places.count
+                                        errors.append(.init(file: filePath, places: places))
+                                    }
                                 }
                             }
                             guard let lineInFile = Int(components[1]) else {
@@ -167,6 +212,7 @@ public class Swift {
                         parsePlace(line)
                     }
                     guard errors.count > 0 else { throw SwiftError.text("Unable to parse errors") }
+                    errors.sort(by: { $0.file.lastPathComponent < $1.file.lastPathComponent })
                     context.command.console.output(" ")
                     for error in errors {
                         context.command.console.output([
@@ -206,20 +252,20 @@ public class Swift {
                         ConsoleTextFragment(string: "Compilation failed: \(error)\n", style: .init(color: .brightMagenta)),
                         ConsoleTextFragment(string: rawError, style: .init(color: .brightRed))
                     ])
-                    throw errorLastLine
+                    throw errorLastLine()
                 }
-                throw errorLastLine
+                throw errorLastLine()
             default:
                 context.command.console.output([
                     ConsoleTextFragment(string: "Compilation failed\n", style: .init(color: .brightMagenta)),
                     ConsoleTextFragment(string: rawError, style: .init(color: .brightRed))
                 ])
-                throw errorLastLine
+                throw errorLastLine()
             }
         }
         
         do {
-            let data = outHandle.readDataToEndOfFile()
+            let data = resultData
             guard data.count > 0 else { return "" }
             guard let result = String(data: data, encoding: .utf8) else {
                 throw SwiftError.text("Unable to read stdout")
