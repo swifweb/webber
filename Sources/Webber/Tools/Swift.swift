@@ -125,7 +125,15 @@ public class Swift {
         guard process.terminationStatus == 0 else {
             let data = resultData
             guard data.count > 0, let rawError = String(data: data, encoding: .utf8) else {
-                throw SwiftError.text("Build failed with exit code \(process.terminationStatus)")
+                let errData = stderr.fileHandleForReading.readDataToEndOfFile()
+                if errData.count > 0 {
+                    let separator = ": error:"
+                    var errString = String(data: errData, encoding: .utf8) ?? "exit code \(process.terminationStatus)"
+                    errString = errString.contains(separator) ? errString.components(separatedBy: separator).last?.trimmingCharacters(in: .whitespaces) ?? "" : errString
+                    throw SwiftError.text("Build failed: \(errString)")
+                } else {
+                    throw SwiftError.text("Build failed with exit code \(process.terminationStatus)")
+                }
             }
             var errorsCount = 0
             func errorLastLine() -> SwiftError {
