@@ -46,10 +46,16 @@ deps.append(.github("vapor/vapor", "4.0.0"), .product("Vapor", "vapor"))
 deps.append(.github("swifweb/console-kit", .branch("master")), .product("ConsoleKit", "console-kit"))
 deps.append(.github("swiftwasm/WasmTransformer", .upToNextMinor(from: "0.0.2")), .product("WasmTransformer", "WasmTransformer"))
 
+if localDev {
+    deps.append(.local("webber-tools"), .product("WebberTools", "webber-tools"))
+} else {
+    deps.append(.github("swifweb/webber-tools", "1.0.0"), .product("WebberTools", "webber-tools"))
+}
+
 // MARK: - Package
 
 let package = Package(
-    name: "Webber",
+    name: "webber",
     platforms: [
        .macOS(.v10_15)
     ],

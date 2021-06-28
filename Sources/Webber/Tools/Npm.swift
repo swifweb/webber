@@ -7,6 +7,7 @@
 
 import Foundation
 import ConsoleKit
+import WebberTools
 
 private let programName = "npm"
 

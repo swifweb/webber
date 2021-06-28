@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import WebberTools
 
 struct Brew {
     enum BrewError: Error, CustomStringConvertible {

@@ -7,6 +7,7 @@
 
 import Foundation
 import ConsoleKit
+import WebberTools
 
 struct Webber {
     private struct NewNpmPackage: Encodable {

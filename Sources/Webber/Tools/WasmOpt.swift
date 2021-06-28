@@ -7,6 +7,7 @@
 
 import Foundation
 import ConsoleKit
+import WebberTools
 
 struct WasmOpt {
     enum WasmOptError: Error, CustomStringConvertible {
