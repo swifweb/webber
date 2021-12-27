@@ -62,7 +62,7 @@ class Server {
         let keyURL = sslURL.appendingPathComponent("key.pem")
         let certURL = sslURL.appendingPathComponent("cert.pem")
         let certs = try certificates(ssl: sslURL, key: keyURL, cert: certURL)
-        let tls = TLSConfiguration.forServer(certificateChain: certs, privateKey: .file(keyURL.path))
+        let tls = TLSConfiguration.makeServerConfiguration(certificateChain: certs, privateKey: .file(keyURL.path))
 
         app.http.server.configuration = .init(hostname: "0.0.0.0",
                                               port: 8888,
