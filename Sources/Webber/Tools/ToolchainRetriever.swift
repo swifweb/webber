@@ -91,7 +91,7 @@ class ToolchainRetriever {
             }
             let tag = try JSONDecoder().decode(GithubTag.self, from: data)
             #if os(macOS)
-            guard let asset = tag.assets.first(where: { $0.name.contains("macos") }) else {
+            guard let asset = tag.assets.first(where: { $0.name.contains("macos") && $0.name.contains(isAppleSilicon() ? "arm64" : "x86_64") }) else {
                 throw ToolchainRetrieverError.undecodableTag
             }
             return asset

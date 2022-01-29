@@ -52,8 +52,8 @@ struct Npm {
     
     func addDevDependencies() throws {
         let packages = [
-            "@wasmer/wasi",
-            "@wasmer/wasmfs",
+            "@wasmer/wasi@0.12.0",
+            "@wasmer/wasmfs@0.12.0",
             "javascript-kit-swift",
             "reconnecting-websocket",
             "webpack",

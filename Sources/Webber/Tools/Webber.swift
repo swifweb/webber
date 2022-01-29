@@ -252,7 +252,7 @@ struct Webber {
     private func executeWebpack() throws {
         let stdout = Pipe()
         let process = Process()
-        process.launchPath = try Bash.which("webpack")
+        process.launchPath = try Bash.which("webpack-cli")
         process.currentDirectoryPath = webberFolder
         process.arguments = ["--config", "entrypoint/config.js"]
         process.standardOutput = stdout
