@@ -13,6 +13,7 @@ struct Optimizer {
     static func optimizeForOldSafari(debug: Bool, _ productName: String, context: WebberContext) throws {
         let wasmFileURL = URL(fileURLWithPath: context.dir.workingDirectory)
             .appendingPathComponent(".build")
+            .appendingPathComponent("wasm32-unknown-wasi")
             .appendingPathComponent(debug ? "debug" : "release")
             .appendingPathComponent(productName)
             .appendingPathExtension("wasm")
@@ -55,6 +56,7 @@ struct Optimizer {
     static func stripDebugInfo(debug: Bool = false, _ productName: String, context: WebberContext) throws {
         let wasmFileURL = URL(fileURLWithPath: context.dir.workingDirectory)
             .appendingPathComponent(".build")
+            .appendingPathComponent("wasm32-unknown-wasi")
             .appendingPathComponent(debug ? "debug" : "release")
             .appendingPathComponent(productName)
             .appendingPathExtension("wasm")
