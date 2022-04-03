@@ -8,7 +8,7 @@
 import Vapor
 
 class WebberContext {
-    private(set) lazy var defaultToolchainVersion = "wasm-5.5.0-RELEASE"
+    private(set) lazy var defaultToolchainVersion = "wasm-5.6.0-RELEASE"
     
     #if os(macOS)
     private(set) lazy var toolchainPaths: [String] = [
