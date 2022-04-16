@@ -45,12 +45,16 @@ You could either clone one of templates from swifweb organization repos or you c
 
 single page app
 ```bash
-webber new spa MyApp
+git clone https://github.com/swifweb/spa-template myspawebsite
+cd myspawebsite
+open Package.swift
 ```
 
 progressive web app
 ```bash
-webber new pwa MyApp
+git clone https://github.com/swifweb/pwa-template mypwawebsite
+cd mypwawebsite
+open Package.swift
 ```
 
 ### Development
