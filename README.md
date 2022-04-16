@@ -47,14 +47,16 @@ single page app
 ```bash
 git clone https://github.com/swifweb/spa-template myspawebsite
 cd myspawebsite
-open Package.swift
+open Package.swift // to work with code
+webber serve // to launch in browser
 ```
 
 progressive web app
 ```bash
 git clone https://github.com/swifweb/pwa-template mypwawebsite
 cd mypwawebsite
-open Package.swift
+open Package.swift // to work with code
+webber serve -t pwa -s Service // to launch in browser
 ```
 
 ### Development
