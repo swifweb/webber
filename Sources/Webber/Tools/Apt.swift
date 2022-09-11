@@ -22,7 +22,7 @@ struct Apt {
 	static func install(_ program: String) throws {
 		let stdout = Pipe()
 		let process = Process()
-		process.launchPath = try Bash.which("apt")
+		process.launchPath = try Bash.which("apt-get")
 		process.arguments = ["--yes", "--force-yes", "install", program]
 		process.standardOutput = stdout
 		
