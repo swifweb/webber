@@ -21,7 +21,7 @@ struct Optimizer {
 
         let startedAt = Date()
 
-        let bar = context.command.console.loadingBar(title: "Optimizing for old Safari")
+        let bar = context.command.console.loadingBar(title: "Optimizing \"\(productName)\" for old Safari")
         bar.start()
 
         guard let wasmBeforeOptimization = FileManager.default.contents(atPath: wasmFileURL.path) else {
@@ -49,7 +49,7 @@ struct Optimizer {
         bar.succeed()
         context.command.console.clear(.line)
         context.command.console.output([
-            ConsoleTextFragment(string: "Optimized for old Safari in ", style: .init(color: .brightBlue, isBold: true)),
+            ConsoleTextFragment(string: "Optimized \"\(productName)\" for old Safari in ", style: .init(color: .brightBlue, isBold: true)),
             ConsoleTextFragment(string: String(format: "%.2fs", Date().timeIntervalSince(startedAt)), style: .init(color: .brightMagenta))
         ])
     }
@@ -65,7 +65,7 @@ struct Optimizer {
 
         let startedAt = Date()
 
-        let bar = context.command.console.loadingBar(title: "Stripping debug info")
+        let bar = context.command.console.loadingBar(title: "Stripping \"\(productName)\" debug info")
         bar.start()
 
         guard let wasmBeforeOptimization = FileManager.default.contents(atPath: wasmFileURL.path) else {
@@ -93,7 +93,7 @@ struct Optimizer {
         bar.succeed()
         context.command.console.clear(.line)
         context.command.console.output([
-            ConsoleTextFragment(string: "Stripped debug info in ", style: .init(color: .brightBlue, isBold: true)),
+            ConsoleTextFragment(string: "Stripped \"\(productName)\" debug info in ", style: .init(color: .brightBlue, isBold: true)),
             ConsoleTextFragment(string: String(format: "%.2fs", Date().timeIntervalSince(startedAt)), style: .init(color: .brightMagenta))
         ])
     }
