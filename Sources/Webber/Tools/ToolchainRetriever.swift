@@ -10,14 +10,20 @@ import ConsoleKit
 
 class ToolchainRetriever {
     let context: WebberContext
+	#if os(macOS)
     private var observation: NSKeyValueObservation?
-    
+	#endif
+	// TODO: add linux support
+	
     init (_ context: WebberContext) {
         self.context = context
     }
     
     deinit {
+		#if os(macOS)
         observation?.invalidate()
+		#endif
+		// TODO: add linux support
     }
     
     enum ToolchainRetrieverError: Error, CustomStringConvertible {
@@ -117,6 +123,7 @@ class ToolchainRetriever {
                 error = $2
                 group.leave()
             }
+			#if os(macOS)
             observation = task.progress.observe(\.fractionCompleted) { progress, _ in
                 let progress = String(format: "%.2fMb (%.2f", (Double(size) / 1_000_000) * progress.fractionCompleted, progress.fractionCompleted * 100) + "%)"
                 self.context.command.console.clear(.line)
@@ -125,6 +132,8 @@ class ToolchainRetriever {
                     ConsoleTextFragment(string: progress, style: .init(color: .brightGreen)),
                 ])
             }
+			#endif
+			// TODO: add linux support
             let downloadinStartedAt = Date()
             context.command.console.output([ConsoleTextFragment(string: "Started toolchain downloading", style: .init(color: .yellow))])
             task.resume()
