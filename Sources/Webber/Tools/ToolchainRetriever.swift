@@ -124,7 +124,7 @@ class ToolchainRetriever {
 			#if os(macOS)
 			let session = URLSession.shared
 			#else
-			let session = URLSession(configuration: .default)
+			let session = URLSession()
 			#endif
             let task = session.downloadTask(with: url) {
                 localURL = $0
