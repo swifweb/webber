@@ -65,7 +65,7 @@ exec bash
 ```
 6. Start using it inside of your project folder
 
-To update `webber` to latest version just fo
+To update `webber` to latest version just do
 ```swift
 cd /opt/webber && git pull && swift build -c release
 ```
