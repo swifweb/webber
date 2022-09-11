@@ -263,7 +263,6 @@ class BundleCommand: Command {
     private var lastRebuildRequestedAt: Date?
     
     func watchForFileChanges() throws {
-        var rebuildingWasmProcess: Process?
         var isRebuilding = false
         var needOneMoreRebuilding = false
         func rebuildWasm() {
@@ -278,13 +277,6 @@ class BundleCommand: Command {
             }
             lastRebuildRequestedAt = Date()
             isRebuilding = true
-            if let process = rebuildingWasmProcess {
-                if process.isRunning {
-                    self.context.command.console.clear(.line)
-                    process.terminate()
-                }
-            }
-            rebuildingWasmProcess = nil
             let buildingStartedAt = Date()
             
             console.output([
@@ -334,30 +326,22 @@ class BundleCommand: Command {
                     finishRebuilding()
                     return
                 }
-                let product = productsToRebuild.removeFirst()
-                rebuildingWasmProcess = swift.buildAsync(product) { result in
-                    switch result {
-                    case .success:
-                        if self.serviceWorkerTarget == product {
-                            rebuildingWasmProcess = self.swift.buildAsync(product, tripleWasm: false) { result in
-                                switch result {
-                                case .success:
-                                    DispatchQueue.global(qos: .userInteractive).async {
-                                        rebuild()
-                                    }
-                                case .failure(let error):
-                                    handleError(error)
-                                }
-                            }
-                        } else {
-                            DispatchQueue.global(qos: .userInteractive).async {
-                                rebuild()
-                            }
-                        }
-                    case .failure(let error):
-                        handleError(error)
-                    }
-                }
+				let product = productsToRebuild.removeFirst()
+				do {
+					try swift.build(product)
+					if self.serviceWorkerTarget == product {
+						try self.swift.build(product, tripleWasm: false)
+						DispatchQueue.global(qos: .userInteractive).async {
+							rebuild()
+						}
+					} else {
+						DispatchQueue.global(qos: .userInteractive).async {
+							rebuild()
+						}
+					}
+				} catch {
+					handleError(error)
+				}
             }
             DispatchQueue.global(qos: .userInteractive).async {
                 rebuild()

@@ -150,8 +150,8 @@
         "repositoryURL": "https://github.com/swifweb/webber-tools",
         "state": {
           "branch": null,
-          "revision": "128576ff7174b2453cf9e6c96e514730f5380bde",
-          "version": "1.2.2"
+          "revision": "a8a88cca3198b8ebb08434dd3ea5f0801881cbb1",
+          "version": "1.3.0"
         }
       },
       {
