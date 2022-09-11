@@ -19,7 +19,13 @@ Powerful console tool for cooking your swifweb apps
 
 macOS 10.15 and Xcode 11.4 or later.
 
+or 
+
+any ubuntu supported on [swift.org](https://swift.org/)
+
 ## Installation
+
+#### macOS
 
 On macOS `webber` can be installed with Homebrew. Make sure you have Homebrew installed and then run:
 
@@ -32,6 +38,32 @@ to update already installed version run
 ```bash
 brew upgrade webber
 ```
+
+#### Ubuntu
+
+1. Install swift manually or via [swiftlang.xyz](https://www.swiftlang.xyz)
+2. Install `binaryen`
+```bash
+apt-get install binaryen
+```
+3. Install `wasmer`
+```bash
+curl https://get.wasmer.io -sSfL | sh
+```
+4. Install `npm`
+```bash
+apt-get install npm
+```
+5. Install `webber`
+```bash
+cd /opt
+git clone https://github.com/swifweb/webber
+cd /opt/webber
+swift build -c release
+ln -s /opt/webber/.build/release/Webber /usr/bin/webber
+```
+6. exec bash
+7. Enjoy!
 
 ## Usage
 
