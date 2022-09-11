@@ -123,10 +123,16 @@ webber serve -t pwa -s Service
 
 ### Release
 
-just run
+for SPA just run
 
 ```bash
 webber release
+```
+
+for PWA execute it this way
+
+```bash
+webber release  -t pwa -s Service
 ```
 
 and then grub your files from `.webber/release/`
