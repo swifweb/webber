@@ -63,7 +63,12 @@ swift build -c release
 ln -s /opt/webber/.build/release/Webber /usr/bin/webber
 exec bash
 ```
-6. Enjoy!
+6. Start using it inside of your project folder
+
+To update `webber` to latest version just fo
+```swift
+cd /opt/webber && git pull && swift build -c release
+```
 
 ## Usage
 
@@ -125,6 +130,43 @@ webber release
 ```
 
 and then grub your files from `.webber/release/`
+
+### How to serve release files with `nginx`
+
+1. Install nginx by the [official instrucation](https://www.nginx.com/resources/wiki/start/topics/tutorials/install/)
+2. Edit `/etc/nginx/mime.types` add `application/wasm    wasm;` in order to serve `wasm` files correctly
+3. Generate SSL certificate with letsencrypt (or anything else)
+4. Declare your server like this
+```ruby
+server {
+    server_name yourdomain.com;
+
+    listen [::]:443 ssl;
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    
+    ssl_session_cache    shared:SSL:10m;
+	ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
+	add_header Strict-Transport-Security "max-age=31536000; includeSubdomains;";
+	ssl_stapling on;
+	ssl_stapling_verify on;
+    
+    root /app/yourdomain.com/.webber/release;
+    
+    location / {
+ 	   try_files $uri $uri/ /index.html;
+ 	}
+ 	
+ 	location ~* \.(js|jpg|png|css|wasm)$ {
+        root /app/yourdomain.com/.webber/release;
+        expires 30d;
+        add_header Cache-Control "public, no-transform";
+    }
+}
+```
 
 ## Credits
 
