@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import WebberTools
 
 struct Extractor {
     enum ExtractorError: Error, CustomStringConvertible {
