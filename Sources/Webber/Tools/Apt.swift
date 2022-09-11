@@ -23,7 +23,7 @@ struct Apt {
 		let stdout = Pipe()
 		let process = Process()
 		process.launchPath = try Bash.which("apt")
-		process.arguments = ["--quiet", "--yes", "--force-yes", "install", program]
+		process.arguments = ["--yes", "--force-yes", "install", program]
 		process.standardOutput = stdout
 		
 		let outHandle = stdout.fileHandleForReading
