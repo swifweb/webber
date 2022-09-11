@@ -155,18 +155,18 @@ server {
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
     
     ssl_session_cache    shared:SSL:10m;
-	ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
-	add_header Strict-Transport-Security "max-age=31536000; includeSubdomains;";
-	ssl_stapling on;
-	ssl_stapling_verify on;
+    ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubdomains;";
+    ssl_stapling on;
+    ssl_stapling_verify on;
     
     root /app/yourdomain.com/.webber/release;
     
     location / {
- 	   try_files $uri $uri/ /index.html;
- 	}
+        try_files $uri $uri/ /index.html;
+    }
  	
- 	location ~* \.(js|jpg|png|css|wasm)$ {
+    location ~* \.(js|jpg|png|css|wasm)$ {
         root /app/yourdomain.com/.webber/release;
         expires 30d;
         add_header Cache-Control "public, no-transform";
