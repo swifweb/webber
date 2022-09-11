@@ -53,7 +53,11 @@ class Toolchain {
             #if os(macOS)
             try Installer.install(localURL)
             #else
-            try Extractor.extract(archive: localURL, dest: URL(fileURLWithPath: "/opt/" + self.context.toolchainFolder))
+			let destURL = URL(fileURLWithPath: "/opt/" + self.context.toolchainFolder)
+			if !FileManager.default.fileExists(atPath: destURL.path) {
+				FileManager.default.createDirectory(atPath: destURL.path, withIntermediateDirectories: true)
+			}
+            try Extractor.extract(archive: localURL, dest: destURL)
             #endif
             lookup()
             guard let toolchainPath = self.toolchainPath else {
