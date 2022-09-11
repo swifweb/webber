@@ -25,13 +25,7 @@ struct Extractor {
         let stderr = Pipe()
         
         let process = Process()
-        
-        #if os(macOS)
-        process.launchPath = "/usr/bin/tar"
-        #else
-        process.launchPath = "/bin/tar"
-        #endif
-        
+		process.launchPath = try Bash.which("tar")
         process.arguments = ["xzf", archivePath.path, "--strip-components=1", "--directory", destinationPath.path]
         process.standardOutput = stdout
         process.standardError = stderr
