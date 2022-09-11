@@ -15,7 +15,7 @@ struct Extractor {
         var description: String {
             switch self {
             case .brokenStdout: return "Unable to read stdout"
-            case .somethingWentWrong(let code): return "Installer failed with code \(code)"
+            case .somethingWentWrong(let code): return "Extractor failed with code \(code)"
             }
         }
     }
