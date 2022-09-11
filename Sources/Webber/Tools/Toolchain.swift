@@ -55,7 +55,7 @@ class Toolchain {
             #else
 			let destURL = URL(fileURLWithPath: "/opt/" + self.context.toolchainFolder)
 			if !FileManager.default.fileExists(atPath: destURL.path) {
-				FileManager.default.createDirectory(atPath: destURL.path, withIntermediateDirectories: true)
+				try FileManager.default.createDirectory(atPath: destURL.path, withIntermediateDirectories: true)
 			}
             try Extractor.extract(archive: localURL, dest: destURL)
             #endif
