@@ -61,9 +61,9 @@ git clone https://github.com/swifweb/webber
 cd /opt/webber
 swift build -c release
 ln -s /opt/webber/.build/release/Webber /usr/bin/webber
+exec bash
 ```
-6. exec bash
-7. Enjoy!
+6. Enjoy!
 
 ## Usage
 
