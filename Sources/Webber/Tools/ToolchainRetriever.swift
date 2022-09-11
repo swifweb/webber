@@ -121,7 +121,12 @@ class ToolchainRetriever {
             var localURL: URL?
             var error: Error?
             group.enter()
-            let task = URLSession.shared.downloadTask(with: url) {
+			#if os(macOS)
+			let session = URLSession.shared
+			#else
+			let session = URLSession(configuration: .default)
+			#endif
+            let task = session.downloadTask(with: url) {
                 localURL = $0
                 error = $2
                 group.leave()
