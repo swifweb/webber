@@ -6,6 +6,9 @@
 //
 
 import Foundation
+#if os(linux)
+import FoundationNetworking
+#endif
 import ConsoleKit
 
 class ToolchainRetriever {
