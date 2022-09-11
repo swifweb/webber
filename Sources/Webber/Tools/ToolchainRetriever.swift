@@ -6,7 +6,7 @@
 //
 
 import Foundation
-#if os(linux)
+#if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
 import ConsoleKit
