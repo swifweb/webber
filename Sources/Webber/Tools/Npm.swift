@@ -25,7 +25,11 @@ struct Npm {
             ]) else {
                 throw NpmError.error("\(programName) is required to prepare web files, please install it manually then")
             }
+			#if os(macOS)
             try Brew.install(programName)
+			#else
+			try Apt.install(programName)
+			#endif
         }
         launchPath = try Bash.which(programName)
     }
