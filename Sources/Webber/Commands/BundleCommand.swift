@@ -119,10 +119,15 @@ class BundleCommand: Command {
     func execute() throws {
         try products.forEach { product in
             try build(product, alsoNative: serviceWorkerTarget == product)
-            if !debug {
-                try optimize(product)
-            }
         }
+		
+		try webber.installDependencies()
+		
+		if !debug {
+			try products.forEach { product in
+				try optimize(product)
+			}
+		}
         
         try cook()
         try moveWasmFiles()
@@ -239,7 +244,7 @@ class BundleCommand: Command {
     
     /// Cook web files
     private func cook() throws {
-        try webber.cook(
+		try webber.cook(
             dev: debug,
             appTarget: productTarget,
             serviceWorkerTarget: serviceWorkerTarget ?? "sw",

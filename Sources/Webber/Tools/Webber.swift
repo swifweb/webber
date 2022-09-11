@@ -76,7 +76,6 @@ struct Webber {
         if !dev {
             try? FileManager.default.removeItem(atPath: releasePath)
         }
-        try installDependencies()
         try checkOrCreateEntrypoint()
         let settings = CookSettings(webber: self, type: appType, dev: dev, appTarget: appTarget, serviceWorkerTarget: serviceWorkerTarget, type: appType)
         try createPointFolderInsideEntrypoint(dev: dev)
@@ -300,7 +299,7 @@ struct Webber {
         }
     }
     
-    private func installDependencies() throws {
+    func installDependencies() throws {
         let npm = try Npm(console, cwd)
         try npm.addDevDependencies()
         try npm.install()
