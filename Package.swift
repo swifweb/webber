@@ -49,7 +49,7 @@ deps.append(.github("swiftwasm/WasmTransformer", .upToNextMinor(from: "0.0.2")),
 if localDev {
     deps.append(.local("webber-tools"), .product("WebberTools", "webber-tools"))
 } else {
-    deps.append(.github("swifweb/webber-tools", "1.2.0"), .product("WebberTools", "webber-tools"))
+    deps.append(.github("swifweb/webber-tools", "1.2.1"), .product("WebberTools", "webber-tools"))
 }
 
 // MARK: - Package
