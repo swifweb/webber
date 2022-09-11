@@ -327,6 +327,7 @@ struct Webber {
     func moveWasmFile(dev: Bool = false, productName: String) throws {
         let originalWasm = URL(fileURLWithPath: context.dir.workingDirectory)
             .appendingPathComponent(".build")
+            .appendingPathComponent(".wasi")
             .appendingPathComponent("wasm32-unknown-wasi")
             .appendingPathComponent(dev ? "debug" : "release")
             .appendingPathComponent("\(productName).wasm")
@@ -348,6 +349,7 @@ struct Webber {
         }
         let buildFolder = URL(fileURLWithPath: context.dir.workingDirectory)
             .appendingPathComponent(".build")
+            .appendingPathComponent(".wasi")
             .appendingPathComponent("wasm32-unknown-wasi")
             .appendingPathComponent(dev ? "debug" : "release")
         guard let resourceFolders = try? FileManager.default.contentsOfDirectory(atPath: buildFolder.path).filter({ $0.hasSuffix(".resources") }) else {

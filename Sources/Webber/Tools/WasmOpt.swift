@@ -25,6 +25,7 @@ struct WasmOpt {
     static func optimize(_ productName: String, context: WebberContext) throws {
         let wasmFileURL = URL(fileURLWithPath: context.dir.workingDirectory)
             .appendingPathComponent(".build")
+			.appendingPathComponent(".wasi")
             .appendingPathComponent("release")
             .appendingPathComponent(productName)
             .appendingPathExtension("wasm")
