@@ -40,26 +40,26 @@ struct WasmOpt {
         outHandle.waitForDataInBackgroundAndNotify()
 
         let startedAt = Date()
-
-        let bar = context.command.console.loadingBar(title: "Optimizing \"\(productName)\" with `wasm-opt`")
-        bar.start()
-        
+		
+//		let bar = context.command.console.loadingBar(title: "Optimizing \"\(productName)\" with `wasm-opt`")
+//		bar.start()
+		
         process.launch()
         process.waitUntilExit()
         
         guard process.terminationStatus == 0 else {
-            bar.fail()
-            context.command.console.clear(.line)
-            throw WasmOptError.somethingWentWrong(code: process.terminationStatus)
+//			bar.fail()
+//			context.command.console.clear(.line)
+			throw WasmOptError.somethingWentWrong(code: process.terminationStatus)
         }
         
-        bar.succeed()
-        context.command.console.clear(.line)
-        context.command.console.output([
-            ConsoleTextFragment(string: "Optimized \"\(productName)\" with `wasm-opt` in ", style: .init(color: .brightBlue, isBold: true)),
-            ConsoleTextFragment(string: String(format: "%.2fs", Date().timeIntervalSince(startedAt)), style: .init(color: .brightMagenta)),
-            ConsoleTextFragment(string: " new size is ", style: .init(color: .brightBlue, isBold: true)),
-            ConsoleTextFragment(string: wasmFileURL.fileSizeString, style: .init(color: .brightMagenta))
-        ])
+//		bar.succeed()
+//		context.command.console.clear(.line)
+		context.command.console.output([
+			ConsoleTextFragment(string: "Optimized \"\(productName)\" with `wasm-opt` in ", style: .init(color: .brightBlue, isBold: true)),
+			ConsoleTextFragment(string: String(format: "%.2fs", Date().timeIntervalSince(startedAt)), style: .init(color: .brightMagenta)),
+			ConsoleTextFragment(string: " new size is ", style: .init(color: .brightBlue, isBold: true)),
+			ConsoleTextFragment(string: wasmFileURL.fileSizeString, style: .init(color: .brightMagenta))
+		])
     }
 }

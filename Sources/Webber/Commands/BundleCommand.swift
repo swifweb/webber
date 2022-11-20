@@ -142,16 +142,16 @@ class BundleCommand: Command {
         ])
         
         let buildingStartedAt = Date()
-        let buildingBar = context.command.console.loadingBar(title: "Building")
-        buildingBar.start()
+//        let buildingBar = context.command.console.loadingBar(title: "Building")
+//        buildingBar.start()
         try swiftBuild(targetName, release: !debug, tripleWasm: true)
         if alsoNative {
             // building non-wasi executable (usually for service worker to grab manifest json)
             // should be built in debug cause of compile error in JavaScriptKit in release mode
-            buildingBar.activity.title = "Grabbing info"
+//            buildingBar.activity.title = "Grabbing info"
             try swiftBuild(targetName, release: false, tripleWasm: false)
         }
-        buildingBar.succeed()
+//        buildingBar.succeed()
 
         context.command.console.clear(.line)
         context.command.console.output([
@@ -278,11 +278,10 @@ class BundleCommand: Command {
             lastRebuildRequestedAt = Date()
             isRebuilding = true
             let buildingStartedAt = Date()
-            
-            console.output([
-                ConsoleTextFragment(string: "Rebuilding, please wait...", style: .init(color: .brightYellow))
-            ])
-            
+			context.command.console.output([
+				ConsoleTextFragment(string: "Rebuilding, please wait...", style: .init(color: .brightYellow))
+			])
+			
             let finishRebuilding = {
                 isRebuilding = false
                 if needOneMoreRebuilding {

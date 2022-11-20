@@ -70,9 +70,9 @@ struct Webber {
     
     func cook(dev: Bool, appTarget: String, serviceWorkerTarget: String, type appType: AppType) throws {
         let startedAt = Date()
-        console.output([
-            ConsoleTextFragment(string: "Cooking web files, please wait", style: .init(color: .brightYellow))
-        ])
+		console.output([
+			ConsoleTextFragment(string: "Cooking web files, please wait", style: .init(color: .brightYellow))
+		])
         if !dev {
             try? FileManager.default.removeItem(atPath: releasePath)
         }

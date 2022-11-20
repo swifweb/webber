@@ -129,24 +129,24 @@ class ToolchainRetriever {
 			#if os(macOS)
             observation = task.progress.observe(\.fractionCompleted) { progress, _ in
                 let progress = String(format: "%.2fMb (%.2f", (Double(size) / 1_000_000) * progress.fractionCompleted, progress.fractionCompleted * 100) + "%)"
-                self.context.command.console.clear(.line)
-                self.context.command.console.output([
-                    ConsoleTextFragment(string: "Toolchain downloading progress: ", style: .init(color: .brightYellow)),
-                    ConsoleTextFragment(string: progress, style: .init(color: .brightGreen)),
-                ])
+				self.context.command.console.clear(.line)
+				self.context.command.console.output([
+					ConsoleTextFragment(string: "Toolchain downloading progress: ", style: .init(color: .brightYellow)),
+					ConsoleTextFragment(string: progress, style: .init(color: .brightGreen)),
+				])
             }
 			#endif
 			// TODO: add linux support
             let downloadinStartedAt = Date()
-            context.command.console.output([ConsoleTextFragment(string: "Started toolchain downloading", style: .init(color: .yellow))])
-            task.resume()
+			context.command.console.output([ConsoleTextFragment(string: "Started toolchain downloading", style: .init(color: .yellow))])
+			task.resume()
             group.wait()
-            context.command.console.clear(.line)
-            context.command.console.output([
-                ConsoleTextFragment(string: "Toolchain downloaded in ", style: .init(color: .brightGreen)),
-                ConsoleTextFragment(string: String(format: "%.2fs", Date().timeIntervalSince(downloadinStartedAt)), style: .init(color: .brightMagenta)),
-            ])
-            guard error == nil else {
+			context.command.console.clear(.line)
+			context.command.console.output([
+				ConsoleTextFragment(string: "Toolchain downloaded in ", style: .init(color: .brightGreen)),
+				ConsoleTextFragment(string: String(format: "%.2fs", Date().timeIntervalSince(downloadinStartedAt)), style: .init(color: .brightMagenta)),
+			])
+			guard error == nil else {
                 throw ToolchainRetrieverError.unableToDownload
             }
             guard let localURLUnwrapped = localURL else {

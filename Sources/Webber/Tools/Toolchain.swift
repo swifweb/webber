@@ -63,16 +63,16 @@ class Toolchain {
             guard let toolchainPath = self.toolchainPath else {
                 throw ToolchainError.toolchainNotFound
             }
-            context.command.console.output([
-                ConsoleTextFragment(string: "Toolchain has been installed at ", style: .init(color: .brightGreen)),
-                ConsoleTextFragment(string: toolchainPath, style: .init(color: .brightYellow))
-            ])
+			context.command.console.output([
+				ConsoleTextFragment(string: "Toolchain has been installed at ", style: .init(color: .brightGreen)),
+				ConsoleTextFragment(string: toolchainPath, style: .init(color: .brightYellow))
+			])
             return
         }
-        context.command.console.output([
-            ConsoleTextFragment(string: "Toolchain has been found at ", style: .init(color: .brightGreen)),
-            ConsoleTextFragment(string: toolchainPath, style: .init(color: .brightYellow))
-        ])
+		context.command.console.output([
+			ConsoleTextFragment(string: "Toolchain has been found at ", style: .init(color: .brightGreen)),
+			ConsoleTextFragment(string: toolchainPath, style: .init(color: .brightYellow))
+		])
     }
     
     private func lookup() {
