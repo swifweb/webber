@@ -234,6 +234,12 @@ extension Webber {
             
             // Start the WebAssembly WASI instance
             wasi.start(instance);
+            
+            // Initialize and start Reactor
+            if (instance.exports._initialize) {
+                instance.exports._initialize();
+                instance.exports.main();
+            }
         };
         """
         file += "\n"

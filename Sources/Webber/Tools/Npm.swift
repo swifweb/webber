@@ -58,7 +58,7 @@ struct Npm {
         let packages = [
             "@wasmer/wasi@0.12.0",
             "@wasmer/wasmfs@0.12.0",
-            "javascript-kit-swift@0.12.0",
+            "javascript-kit-swift@0.17.0",
             "reconnecting-websocket",
             "webpack",
             "webpack-cli"
