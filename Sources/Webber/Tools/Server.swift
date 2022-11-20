@@ -86,10 +86,10 @@ class Server {
             } else if isDir.boolValue {
                 throw ServerError.error("SSL path is unexpectedly file, not a folder: \(ssl.path)")
             }
-            context.console.output([
-                ConsoleTextFragment(string: "Generating self-signed SSL certificate", style: .init(color: .brightYellow, isBold: true))
-            ])
-            let configURL = ssl.appendingPathComponent("conf.cnf")
+			context.console.output([
+				ConsoleTextFragment(string: "Generating self-signed SSL certificate", style: .init(color: .brightYellow, isBold: true))
+			])
+			let configURL = ssl.appendingPathComponent("conf.cnf")
             do {
                 let config = """
                 [dn]
@@ -115,10 +115,10 @@ class Server {
                 try? FileManager.default.removeItem(at: configURL)
                 throw error
             }
-            context.console.clear(.line)
-            context.console.output([
-                ConsoleTextFragment(string: "Generated self-signed SSL certificate", style: .init(color: .brightBlue, isBold: true))
-            ])
+			context.console.clear(.line)
+			context.console.output([
+				ConsoleTextFragment(string: "Generated self-signed SSL certificate", style: .init(color: .brightBlue, isBold: true))
+			])
         }
         
         return try NIOSSLCertificate.fromPEMFile(cert.path).map { .certificate($0) }
@@ -127,11 +127,11 @@ class Server {
 
 extension Server: LifecycleHandler {
     public func didBoot(_ application: Application) throws {
-        IpConfig.getLocalIPs().forEach {
-            webber.context.command.console.output([
-                ConsoleTextFragment(string: "Available at ", style: .init(color: .brightBlue, isBold: true)),
-                ConsoleTextFragment(string: "https://" + $0 + ":8888", style: .init(color: .brightMagenta))
-            ])
+        IpConfig.getLocalIPs().forEach { address in
+			webber.context.command.console.output([
+				ConsoleTextFragment(string: "Available at ", style: .init(color: .brightBlue, isBold: true)),
+				ConsoleTextFragment(string: "https://" + address + ":8888", style: .init(color: .brightMagenta))
+			])
         }
         open(url: "https://127.0.0.1:8888")
     }
