@@ -65,8 +65,8 @@ struct Optimizer {
 
         let startedAt = Date()
 		
-		let bar = context.command.console.loadingBar(title: "Stripping \"\(productName)\" debug info")
-		bar.start()
+//		let bar = context.command.console.loadingBar(title: "Stripping \"\(productName)\" debug info")
+//		bar.start()
 
         guard let wasmBeforeOptimization = FileManager.default.contents(atPath: wasmFileURL.path) else {
 //			bar.fail()
