@@ -185,8 +185,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swifweb/webber-tools",
       "state" : {
-        "revision" : "72cf6578a35e91578d8a912b3427a7b999a8b328",
-        "version" : "1.4.0"
+        "revision" : "8b4195af33da5abb96ca164049d24bad4790ac81",
+        "version" : "1.4.1"
       }
     },
     {
