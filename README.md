@@ -121,6 +121,12 @@ so in the end `serve` command for `pwa` template could look like this
 webber serve -t pwa -s Service
 ```
 
+#### Additional parameters
+
+`-v` or `--verbose` to show more info in console for debugging purposes
+`-p 8181` or `--port 8181` to start webber server on `8181` port instead of default `8888`
+`--browser chrome/safari` to automatically open desired browser, by default it doesn't open any
+
 ### Release
 
 for SPA just run

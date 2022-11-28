@@ -57,6 +57,27 @@ class BundleCommand: Command {
             help: "Name of app target."
         )
         var appTarget: String?
+        
+        @Option(
+            name: "verbose",
+            short: "v",
+            help: "Prints more info in console."
+        )
+        var verbose: Bool?
+        
+        @Option(
+            name: "port",
+            short: "p",
+            help: "Port for webber server. Default is 8888."
+        )
+        var port: Int?
+        
+        @Option(
+            name: "browser",
+            help: "Destination browser name to automatically launch in.",
+            completion: .values(BrowserType.all)
+        )
+        var browserType: BrowserType?
 
         init() {}
     }
@@ -76,7 +97,13 @@ class BundleCommand: Command {
         }
         
         // Instantiate webber context
-        self.context = WebberContext(dir: dir, command: context)
+        self.context = WebberContext(
+            dir: dir,
+            command: context,
+            verbose: signature.$verbose.isPresent,
+            port: signature.port ?? 8888,
+            browserType: signature.browserType
+        )
         
         // Instantiate swift
         swift = Swift(try toolchain.pathToSwift(), self.context.dir.workingDirectory)
@@ -211,12 +238,12 @@ class BundleCommand: Command {
     }
     
     private func swiftBuild(_ productName: String, release: Bool = false, tripleWasm: Bool) throws {
-        #if DEBUG
-        context.command.console.output([
-            ConsoleTextFragment(string: swift.launchPath, style: .init(color: .brightBlue, isBold: true)),
-            ConsoleTextFragment(string: " " + Swift.Command.build(release: release, productName: productName).arguments(tripleWasm: tripleWasm).joined(separator: " ") + "\n", style: .init(color: .brightMagenta))
-        ])
-        #endif
+        if webber.context.verbose {
+            context.command.console.output([
+                ConsoleTextFragment(string: swift.launchPath, style: .init(color: .brightBlue, isBold: true)),
+                ConsoleTextFragment(string: " " + Swift.Command.build(release: release, productName: productName).arguments(tripleWasm: tripleWasm).joined(separator: " ") + "\n", style: .init(color: .brightMagenta))
+            ])
+        }
         do {
             try swift.build(productName, release: release, tripleWasm: tripleWasm)
         } catch let error as Swift.SwiftError {

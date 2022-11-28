@@ -12,10 +12,12 @@ import WebberTools
 class Server {
     fileprivate var app: Application!
     let webber: Webber
+    let port: Int
     private var wsClients: [WebSocket] = []
     
     init (_ webber: Webber) {
         self.webber = webber
+        self.port = webber.context.port // 8888
     }
     
     private var isSpinnedUp = false
@@ -54,7 +56,7 @@ class Server {
     }
     
     private func configureHTTP1() {
-        app.http.server.configuration.address = .hostname("0.0.0.0", port: 8888)
+        app.http.server.configuration.address = .hostname("0.0.0.0", port: port)
     }
     
     private func configureHTTP2() throws {
@@ -130,10 +132,10 @@ extension Server: LifecycleHandler {
         IpConfig.getLocalIPs().forEach { address in
 			webber.context.command.console.output([
 				ConsoleTextFragment(string: "Available at ", style: .init(color: .brightBlue, isBold: true)),
-				ConsoleTextFragment(string: "https://" + address + ":8888", style: .init(color: .brightMagenta))
+				ConsoleTextFragment(string: "https://" + address + ":\(webber.context.port)", style: .init(color: .brightMagenta))
 			])
         }
-        open(url: "https://127.0.0.1:8888")
+        open(url: "https://127.0.0.1:\(webber.context.port)")
     }
     
     func shutdown(_ application: Application) {
@@ -149,8 +151,15 @@ extension Server: LifecycleHandler {
         #endif
         let process = Process()
         process.launchPath = launchPath
+        #if os(macOS)
+        if let browserType = webber.context.browserType {
+            process.arguments = ["-a", browserType.appName, url]
+            process.launch()
+        }
+        #else
         process.arguments = [url]
         process.launch()
+        #endif
     }
 }
 
