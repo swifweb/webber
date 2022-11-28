@@ -124,9 +124,13 @@ webber serve -t pwa -s Service -p 443 --browser chrome --browser-self-signed --b
 #### Additional parameters
 
 `-v` or `--verbose` to show more info in console for debugging purposes
+
 `-p 443` or `--port 443` to start webber server on `443` port instead of default `8888`
+
 `--browser chrome/safari` to automatically open desired browser, by default it doesn't open any
+
 `--browser-self-signed` needed to debug service workers locally, otherwise they doesn't work
+
 `--browser-incognito` to open additional instance of browser in incognito mode, works only with chrome
 
 ### Release
