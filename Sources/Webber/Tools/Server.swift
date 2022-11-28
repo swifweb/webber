@@ -67,7 +67,7 @@ class Server {
         let tls = TLSConfiguration.makeServerConfiguration(certificateChain: certs, privateKey: .file(keyURL.path))
 
         app.http.server.configuration = .init(hostname: "0.0.0.0",
-                                              port: 8888,
+                                              port: port,
                                               backlog: 256,
                                               reuseAddress: true,
                                               tcpNoDelay: true,
@@ -135,7 +135,11 @@ extension Server: LifecycleHandler {
 				ConsoleTextFragment(string: "https://" + address + ":\(webber.context.port)", style: .init(color: .brightMagenta))
 			])
         }
-        open(url: "https://127.0.0.1:\(webber.context.port)")
+        var url = "https://localhost"
+        if webber.context.port != 443 {
+            url = "\(url):\(webber.context.port)"
+        }
+        open(url: url)
     }
     
     func shutdown(_ application: Application) {
@@ -153,7 +157,22 @@ extension Server: LifecycleHandler {
         process.launchPath = launchPath
         #if os(macOS)
         if let browserType = webber.context.browserType {
-            process.arguments = ["-a", browserType.appName, url]
+            var args: [String] = ["-a", browserType.appName]
+            if webber.context.browserSelfSigned {
+                args += ["-n", "-u", url]
+                args += [
+                    "--args", "--user-data-dir=/tmp", "--ignore-certificate-errors", "--unsafely-treat-insecure-origin-as-secure=\(url)"
+                ]
+                if webber.context.browserIncognito {
+                    args += ["--incognito"]
+                }
+                process.arguments = args
+            } else {
+                if webber.context.browserIncognito {
+                    args += ["-u", url, "--args", "--incognito"]
+                }
+                process.arguments = args
+            }
             process.launch()
         }
         #else

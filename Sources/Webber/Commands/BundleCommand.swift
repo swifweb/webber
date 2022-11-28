@@ -78,6 +78,18 @@ class BundleCommand: Command {
             completion: .values(BrowserType.all)
         )
         var browserType: BrowserType?
+        
+        @Option(
+            name: "browser-self-signed",
+            help: "Opens additional instance of browser with allowed self-signed SSL setting to debug service-workers."
+        )
+        var browserSelfSigned: Bool?
+        
+        @Option(
+            name: "browser-incognito",
+            help: "Opens additional instance of browser in incognito mode."
+        )
+        var browserIncognito: Bool?
 
         init() {}
     }
@@ -102,7 +114,9 @@ class BundleCommand: Command {
             command: context,
             verbose: signature.$verbose.isPresent,
             port: signature.port ?? 8888,
-            browserType: signature.browserType
+            browserType: signature.browserType,
+            browserSelfSigned: signature.$browserSelfSigned.isPresent,
+            browserIncognito: signature.$browserIncognito.isPresent
         )
         
         // Instantiate swift

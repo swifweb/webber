@@ -30,6 +30,8 @@ class WebberContext {
     let verbose: Bool
     let port: Int
     let browserType: BrowserType?
+    let browserSelfSigned: Bool
+    let browserIncognito: Bool
     
     lazy var toolchainFolder = "swift-" + toolchainVersion + toolchainExtension
     
@@ -41,11 +43,21 @@ class WebberContext {
         return str
     }
     
-    init (dir: DirectoryConfiguration, command: CommandContext, verbose: Bool, port: Int, browserType: BrowserType?) {
+    init (
+        dir: DirectoryConfiguration,
+        command: CommandContext,
+        verbose: Bool,
+        port: Int,
+        browserType: BrowserType?,
+        browserSelfSigned: Bool,
+        browserIncognito: Bool
+    ) {
         self.dir = dir
         self.command = command
         self.verbose = verbose
         self.port = port
         self.browserType = browserType
+        self.browserSelfSigned = browserSelfSigned
+        self.browserIncognito = browserIncognito
     }
 }
