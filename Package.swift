@@ -54,7 +54,7 @@ if localDev {
 	])
 } else {
 	deps.append(contentsOf: [
-		.init(.github("swifweb/webber-tools", "1.4.1"), .product("WebberTools", "webber-tools"))
+		.init(.github("swifweb/webber-tools", "1.4.2"), .product("WebberTools", "webber-tools"))
 	])
 }
 

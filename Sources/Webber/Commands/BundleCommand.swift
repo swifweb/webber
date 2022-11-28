@@ -162,6 +162,54 @@ class BundleCommand: Command {
         ])
     }
     
+    private func _printBuildErrors(_ compilationProblem: Swift.SwiftError) throws {
+        switch compilationProblem {
+        case .errors(let errors):
+            context.command.console.output(" ")
+            for error in errors {
+                context.command.console.output([
+                    ConsoleTextFragment(string: " " + error.file.lastPathComponent + " ", style: .init(color: .green, background: .custom(r: 68, g: 68, b: 68)))
+                ] + " " + [
+                    ConsoleTextFragment(string: error.file.path, style: .init(color: .custom(r: 168, g: 168, b: 168)))
+                ])
+                context.command.console.output(" ")
+                for place in error.places {
+                    let lineNumberString = "\(place.line) |"
+                    let errorTitle = " ERROR "
+                    let errorTitlePrefix = "   "
+                    context.command.console.output([
+                        ConsoleTextFragment(string: errorTitlePrefix, style: .init(color: .none)),
+                        ConsoleTextFragment(string: errorTitle, style: .init(color: .brightWhite, background: .red, isBold: true))
+                    ] + " " + [
+                        ConsoleTextFragment(string: place.reason, style: .init(color: .none))
+                    ])
+                    let _len = (errorTitle.count + 5) - lineNumberString.count
+                    let errorLinePrefix = _len > 0 ? (0..._len).map { _ in " " }.joined(separator: "") : ""
+                    context.command.console.output([
+                        ConsoleTextFragment(string: errorLinePrefix + lineNumberString, style: .init(color: .brightCyan))
+                    ] + " " + [
+                        ConsoleTextFragment(string: place.code, style: .init(color: .none))
+                    ])
+                    let linePointerBeginning = (0...lineNumberString.count - 2).map { _ in " " }.joined(separator: "") + "|"
+                    context.command.console.output([
+                        ConsoleTextFragment(string: errorLinePrefix + linePointerBeginning, style: .init(color: .brightCyan))
+                    ] + " " + [
+                        ConsoleTextFragment(string: place.pointer, style: .init(color: .brightRed))
+                    ])
+                    context.command.console.output(" ")
+                }
+            }
+        case .raw(let raw):
+            context.command.console.output([
+                ConsoleTextFragment(string: "Compilation failed\n", style: .init(color: .brightMagenta)),
+                ConsoleTextFragment(string: raw, style: .init(color: .brightRed))
+            ])
+            throw Swift.SwiftError.text("Unable to continue cause of failed compilation 🥺\n")
+        default:
+            throw compilationProblem
+        }
+    }
+    
     private func swiftBuild(_ productName: String, release: Bool = false, tripleWasm: Bool) throws {
         #if DEBUG
         context.command.console.output([
@@ -169,65 +217,10 @@ class BundleCommand: Command {
             ConsoleTextFragment(string: " " + Swift.Command.build(release: release, productName: productName).arguments(tripleWasm: tripleWasm).joined(separator: " ") + "\n", style: .init(color: .brightMagenta))
         ])
         #endif
-        var errorsCount = 0
-        func errorLastLine() -> Swift.SwiftError {
-            var ending = ""
-            if errorsCount == 1 {
-                ending = "found 1 error ❗️"
-            } else if errorsCount > 1 {
-                ending = "found \(errorsCount) errors ❗️❗️❗️"
-            }
-            return Swift.SwiftError.text("Unable to continue cause of failed compilation 🥺 \(ending)\n")
-        }
         do {
             try swift.build(productName, release: release, tripleWasm: tripleWasm)
         } catch let error as Swift.SwiftError {
-            switch error {
-            case .errors(let errors):
-                errorsCount = errors.map { $0.places.count }.reduce(0, +)
-                context.command.console.output(" ")
-                for error in errors {
-                    context.command.console.output([
-                        ConsoleTextFragment(string: " " + error.file.lastPathComponent + " ", style: .init(color: .green, background: .custom(r: 68, g: 68, b: 68)))
-                    ] + " " + [
-                        ConsoleTextFragment(string: error.file.path, style: .init(color: .custom(r: 168, g: 168, b: 168)))
-                    ])
-                    context.command.console.output(" ")
-                    for place in error.places {
-                        let lineNumberString = "\(place.line) |"
-                        let errorTitle = " ERROR "
-                        let errorTitlePrefix = "   "
-                        context.command.console.output([
-                            ConsoleTextFragment(string: errorTitlePrefix, style: .init(color: .none)),
-                            ConsoleTextFragment(string: errorTitle, style: .init(color: .brightWhite, background: .red, isBold: true))
-                        ] + " " + [
-                            ConsoleTextFragment(string: place.reason, style: .init(color: .none))
-                        ])
-                        let _len = (errorTitle.count + 5) - lineNumberString.count
-                        let errorLinePrefix = _len > 0 ? (0..._len).map { _ in " " }.joined(separator: "") : ""
-                        context.command.console.output([
-                            ConsoleTextFragment(string: errorLinePrefix + lineNumberString, style: .init(color: .brightCyan))
-                        ] + " " + [
-                            ConsoleTextFragment(string: place.code, style: .init(color: .none))
-                        ])
-                        let linePointerBeginning = (0...lineNumberString.count - 2).map { _ in " " }.joined(separator: "") + "|"
-                        context.command.console.output([
-                            ConsoleTextFragment(string: errorLinePrefix + linePointerBeginning, style: .init(color: .brightCyan))
-                        ] + " " + [
-                            ConsoleTextFragment(string: place.pointer, style: .init(color: .brightRed))
-                        ])
-                        context.command.console.output(" ")
-                    }
-                }
-            case .raw(let raw):
-                context.command.console.output([
-                    ConsoleTextFragment(string: "Compilation failed\n", style: .init(color: .brightMagenta)),
-                    ConsoleTextFragment(string: raw, style: .init(color: .brightRed))
-                ])
-                throw Swift.SwiftError.text("Unable to continue cause of failed compilation 🥺\n")
-            default:
-                throw error
-            }
+            try _printBuildErrors(error)
         } catch {
             throw error
         }
@@ -338,7 +331,10 @@ class BundleCommand: Command {
 							rebuild()
 						}
 					}
-				} catch {
+				} catch let error as Swift.SwiftError {
+                    try? _printBuildErrors(error)
+                    handleError(error)
+                } catch {
 					handleError(error)
 				}
             }
