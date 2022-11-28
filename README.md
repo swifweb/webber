@@ -118,16 +118,16 @@ if you clone the `pwa` template then you should additionally provide the followi
 so in the end `serve` command for `pwa` template could look like this
 
 ```bash
-webber serve -t pwa -s Service
+webber serve -t pwa -s Service -p 443 --browser chrome --browser-self-signed --browser-incognito
 ```
 
 #### Additional parameters
 
 `-v` or `--verbose` to show more info in console for debugging purposes
-`-p 8181` or `--port 8181` to start webber server on `8181` port instead of default `8888`
+`-p 443` or `--port 443` to start webber server on `443` port instead of default `8888`
 `--browser chrome/safari` to automatically open desired browser, by default it doesn't open any
-`--browser-self-signed` to open additional instance of browser with allowed self-signed SSL setting to debug service-workers
-`--browser-incognito` to open additional instance of browser in incognito mode
+`--browser-self-signed` needed to debug service workers locally, otherwise they doesn't work
+`--browser-incognito` to open additional instance of browser in incognito mode, works only with chrome
 
 ### Release
 
