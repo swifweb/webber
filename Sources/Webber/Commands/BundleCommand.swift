@@ -262,6 +262,7 @@ class BundleCommand: Command {
             try swift.build(productName, release: release, tripleWasm: tripleWasm)
         } catch let error as Swift.SwiftError {
             try _printBuildErrors(error)
+            throw error
         } catch {
             throw error
         }
