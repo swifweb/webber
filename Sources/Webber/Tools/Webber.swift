@@ -347,11 +347,12 @@ struct Webber {
             destFolder = destFolder.appendingPathComponent(".resources")
             try? FileManager.default.removeItem(atPath: destFolder.path)
         }
+        let mode = dev ? "debug" : "release"
         let buildFolder = URL(fileURLWithPath: context.dir.workingDirectory)
             .appendingPathComponent(".build")
             .appendingPathComponent(".wasi")
             .appendingPathComponent("wasm32-unknown-wasi")
-            .appendingPathComponent(dev ? "debug" : "release")
+            .appendingPathComponent(mode)
         guard let resourceFolders = try? FileManager.default.contentsOfDirectory(atPath: buildFolder.path).filter({ $0.hasSuffix(".resources") }) else {
             return
         }
@@ -359,13 +360,65 @@ struct Webber {
         try? FileManager.default.createDirectory(atPath: destFolder.path, withIntermediateDirectories: false)
         resourceFolders.forEach {
             let fromFolderURL = buildFolder.appendingPathComponent($0)
-            guard let files = try? FileManager.default.contentsOfDirectory(atPath: fromFolderURL.path), files.count > 0 else {
-                return
+            let modulePath = fromFolderURL.path.replacingOccurrences(of: context.dir.workingDirectory, with: "")
+            let moduleName = modulePath.components(separatedBy: "/\(mode)/").last?.replacingOccurrences(of: ".resources", with: "") ?? "n/a (please report a bug)"
+            if context.verbose {
+                console.output([
+                    ConsoleTextFragment(
+                        string: "📦 copying files from module: \(moduleName)",
+                        style: .init(color: .brightYellow, isBold: true)
+                    )
+                ])
             }
-            files.forEach {
-                let fromFile = fromFolderURL.appendingPathComponent($0).path
-                try? FileManager.default.copyItem(atPath: fromFile, toPath: destFolder.appendingPathComponent($0).path)
-                try? FileManager.default.removeItem(atPath: fromFile)
+            guard let files = try? FileManager.default.contentsOfDirectory(atPath: fromFolderURL.path), files.count > 0 else { return }
+            for f in files {
+                func processPath(_ components: [String]) {
+                    var fromURL = fromFolderURL
+                    for component in components {
+                        fromURL = fromURL.appendingPathComponent(component)
+                    }
+                    let fromFile = fromURL.path
+                    var toURL = destFolder
+                    for component in components {
+                        toURL = toURL.appendingPathComponent(component)
+                    }
+                    let toFile = toURL.path
+                    var isDir: ObjCBool = false
+                    guard FileManager.default.fileExists(atPath: fromFile, isDirectory: &isDir) else { return }
+                    if !isDir.boolValue {
+                        if context.verbose {
+                            let purePathFrom = fromFile.replacingOccurrences(of: context.dir.workingDirectory, with: "").replacingOccurrences(of: modulePath, with: "")
+                            let purePathTo = toFile.replacingOccurrences(of: context.dir.workingDirectory, with: "").replacingOccurrences(of: modulePath, with: "")
+                            var consoleOutput: [ConsoleTextFragment] = [
+                                ConsoleTextFragment(
+                                    string: "📑 copy \(purePathFrom)",
+                                    style: .init(color: .brightMagenta, isBold: true)
+                                ),
+                                ConsoleTextFragment(string: " → ", style: .init(color: .brightCyan, isBold: true)),
+                                ConsoleTextFragment(
+                                    string: "\(purePathTo)",
+                                    style: .init(color: .brightYellow, isBold: true)
+                                )
+                            ]
+                            if FileManager.default.fileExists(atPath: toFile) {
+                                consoleOutput.append(ConsoleTextFragment(
+                                    string: " (⚠️  same file from another module has been overwritten)",
+                                    style: .init(color: .brightRed, isBold: true)
+                                ))
+                            }
+                            console.output(ConsoleText(fragments: consoleOutput))
+                        }
+                        try? FileManager.default.copyItem(atPath: fromFile, toPath: toFile)
+                        try? FileManager.default.removeItem(atPath: fromFile)
+                    } else {
+                        try? FileManager.default.createDirectory(atPath: toFile, withIntermediateDirectories: true)
+                        guard let files = try? FileManager.default.contentsOfDirectory(atPath: fromFile), files.count > 0 else { return }
+                        for f in files {
+                            processPath(components + [f])
+                        }
+                    }
+                }
+                processPath([f])
             }
         }
     }
