@@ -13,6 +13,7 @@ var input = CommandInput(arguments: CommandLine.arguments)
 var context = CommandContext(console: console, input: input)
 
 var commands = Commands(enableAutocomplete: false)
+commands.use(VersionCommand(), as: "version", isDefault: false)
 commands.use(ServeCommand(), as: "serve", isDefault: false)
 commands.use(ReleaseCommand(), as: "release", isDefault: false)
 
