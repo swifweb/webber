@@ -99,15 +99,22 @@ class ToolchainRetriever {
                 throw ToolchainRetrieverError.githubBadResponse
             }
             let tag = try JSONDecoder().decode(GithubTag.self, from: data)
+            let arch = try Arch.get()
+            if context.verbose {
+                self.context.command.console.output([
+                    ConsoleTextFragment(string: "Current architecture: ", style: .init(color: .brightYellow)),
+                    ConsoleTextFragment(string: arch, style: .init(color: .brightGreen)),
+                ])
+            }
             #if os(macOS)
-            guard let asset = tag.assets.first(where: { $0.name.contains("macos") && $0.name.contains(isAppleSilicon() ? "arm64" : "x86_64") }) else {
+            guard let asset = tag.assets.first(where: { $0.name.contains("macos") && $0.name.contains(arch) }) else {
                 throw ToolchainRetrieverError.undecodableTag
             }
             return asset
             #else
             guard
                 let ubuntuRelease = self.ubuntuRelease,
-                let asset = tag.assets.first(where: { $0.name.contains(ubuntuRelease) })
+                let asset = tag.assets.first(where: { $0.name.contains(ubuntuRelease) && $0.name.contains(arch) })
             else {
                 throw ToolchainRetrieverError.unableToFindTagForCurrentOS
             }
@@ -118,6 +125,12 @@ class ToolchainRetriever {
         let asset = try getLastToolchainAsset()
         
         func download(_ url: URL, _ size: Int) throws -> URL {
+            if context.verbose {
+                self.context.command.console.output([
+                    ConsoleTextFragment(string: "Toolchain URL: ", style: .init(color: .brightYellow)),
+                    ConsoleTextFragment(string: url.absoluteString, style: .init(color: .brightGreen)),
+                ])
+            }
             var localURL: URL?
             var error: Error?
             group.enter()
@@ -138,7 +151,7 @@ class ToolchainRetriever {
 			#endif
 			// TODO: add linux support
             let downloadinStartedAt = Date()
-			context.command.console.output([ConsoleTextFragment(string: "Started toolchain downloading", style: .init(color: .yellow))])
+			context.command.console.output([ConsoleTextFragment(string: "Started toolchain downloading, please wait", style: .init(color: .yellow))])
 			task.resume()
             group.wait()
 			context.command.console.clear(.line)
