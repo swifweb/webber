@@ -37,7 +37,7 @@ extension Webber {
         .error { color: #ff2b2b!important; }
         .progress {
             position: fixed;
-            left 0px;
+            left: 0px;
             top: 0px;
             height: 3px;
             width: 100%;
