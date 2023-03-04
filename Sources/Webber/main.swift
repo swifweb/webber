@@ -16,6 +16,7 @@ var commands = Commands(enableAutocomplete: false)
 commands.use(VersionCommand(), as: "version", isDefault: false)
 commands.use(ServeCommand(), as: "serve", isDefault: false)
 commands.use(ReleaseCommand(), as: "release", isDefault: false)
+commands.use(NewCommand(), as: "new", isDefault: false)
 
 do {
     let group = commands
