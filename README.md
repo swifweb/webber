@@ -78,9 +78,8 @@ If you don't then manually `git clone` a template and then go to its directory
 
 ### New project
 
-You could either clone one of templates from swifweb organization repos or you could use `webber`
+You can either simply execute `webber new` or clone one of templates manually
 
-single page app
 ```bash
 git clone https://github.com/swifweb/spa-template myspawebsite
 cd myspawebsite
