@@ -18,7 +18,7 @@ extension Webber {
             }
             headlines.append(#"<link rel="manifest" href="./manifest.json">"#)
         }
-        headlines.append("<script type=\"text/javascript\" src=\"\(appJS)\" async></script>")
+        headlines.append("<script type=\"text/javascript\" src=\"/\(appJS)\" async></script>")
         let style = """
         <style>
         * { box-sizing: border-box; }
