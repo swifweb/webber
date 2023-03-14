@@ -47,7 +47,7 @@ struct Optimizer {
         }
 
 //		bar.succeed()
-		context.command.console.clear(.line)
+//		context.command.console.clear(.line)
 		context.command.console.output([
 			ConsoleTextFragment(string: "Optimized \"\(productName)\" for old Safari in ", style: .init(color: .brightBlue, isBold: true)),
 			ConsoleTextFragment(string: String(format: "%.2fs", Date().timeIntervalSince(startedAt)), style: .init(color: .brightMagenta))
