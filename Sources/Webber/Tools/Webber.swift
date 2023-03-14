@@ -242,10 +242,10 @@ struct Webber {
         do {
             try executeWebpack()
         } catch {
-            try deleteWebpackConfig(at: configPath)
+            try? deleteWebpackConfig(at: configPath)
             throw error
         }
-        try deleteWebpackConfig(at: configPath)
+        try? deleteWebpackConfig(at: configPath)
     }
     
     private func executeWebpack() throws {
