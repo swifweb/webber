@@ -43,7 +43,7 @@ class NewCommand: Command {
         } else {
             type = context.console.choose("Choose \("type", color: .brightYellow) of the app", from: [AppType.pwa, .spa])
         }
-        let name = context.console.ask("Enter \("name", color: .brightYellow) of the app").capitalized
+        let name = context.console.ask("Enter \("name", color: .brightYellow) of the app").firstCapitalized
         let newFolderPath = dir.workingDirectory.appending("/\(name)")
         
         let filesCountInFolder = (try? FileManager.default.contentsOfDirectory(atPath: newFolderPath).count) ?? 0
@@ -236,7 +236,7 @@ class NewCommand: Command {
         FileManager.default.createFile(atPath: pagesAppSourcesPath.appending("/HelloPage.swift"), contents: """
         import Web
 
-        class HelloPage: ViewController {
+        class HelloPage: PageController {
             @DOM override var body: DOM.Content {
                 P("Hello page")
                     .textAlign(.center)
@@ -265,7 +265,7 @@ class NewCommand: Command {
         import Web
         import FetchAPI
 
-        class IndexPage: ViewController {
+        class IndexPage: PageController {
             @State var firstTodoTitle = "n/a"
             
             @DOM override var body: DOM.Content {
@@ -337,7 +337,7 @@ class NewCommand: Command {
         FileManager.default.createFile(atPath: pagesAppSourcesPath.appending("/NotFoundPage.swift"), contents: """
         import Web
 
-        class NotFoundPage: ViewController {
+        class NotFoundPage: PageController {
             @DOM override var body: DOM.Content {
                 P("this is catchall aka 404 NOT FOUND page")
                     .textAlign(.center)
@@ -421,4 +421,8 @@ class NewCommand: Command {
         **********************************************************************************************
         """)
     }
+}
+
+fileprivate extension StringProtocol {
+    var firstCapitalized: String { prefix(1).capitalized + dropFirst() }
 }
