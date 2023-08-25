@@ -23,8 +23,8 @@ struct Arch {
     static func get() throws -> String {
         let stdout = Pipe()
         let process = Process()
-        process.launchPath = try Bash.which("arch")
-        process.arguments = []
+        process.launchPath = try Bash.which("uname")
+        process.arguments = ["-m"]
         process.standardOutput = stdout
         
         let outHandle = stdout.fileHandleForReading
