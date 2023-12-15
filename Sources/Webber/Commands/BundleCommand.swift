@@ -157,9 +157,11 @@ class BundleCommand: Command {
         // Lookup product target
         self.context.debugVerbose("Lookup product target started")
         if let appTarget = signature.appTarget {
+            self.context.debugVerbose("Lookup product target: looking for: \(appTarget)")
             productTarget = signature.appTarget
             try swift.checkIfAppProductPresent(appTarget)
         } else {
+            self.context.debugVerbose("Lookup product target: trying to lookup executable name")
             productTarget = try swift.lookupExecutableName(excluding: serviceWorkerTarget)
         }
         self.context.debugVerbose("Lookup product target finished")
