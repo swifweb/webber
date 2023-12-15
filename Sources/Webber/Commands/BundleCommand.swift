@@ -37,6 +37,12 @@ class BundleCommand: Command {
     
     struct Signature: CommandSignature {
         @Option(
+            name: "toolchain",
+            help: "Toolchain tag name from official swift-wasm/swift repo https://github.com/swiftwasm/swift/tags"
+        )
+        var toolchain: String?
+        
+        @Option(
             name: "type",
             short: "t",
             help: "App type. It is `spa` by default. Could also be `pwa`.",
@@ -64,6 +70,13 @@ class BundleCommand: Command {
             help: "Prints more info in console."
         )
         var verbose: Bool?
+        
+        @Option(
+            name: "debug-verbose",
+            short: "d",
+            help: "Prints a lot of info in console."
+        )
+        var debugVerbose: Bool?
         
         @Option(
             name: "port",
@@ -99,6 +112,15 @@ class BundleCommand: Command {
     func run(using context: CommandContext, signature: Signature) throws {
         appType = signature.type ?? .spa
         serviceWorkerTarget = signature.serviceWorkerTarget
+        context.console.output([
+            ConsoleTextFragment(string: String.swifWebASCIILogo, style: .init(color: .green, isBold: false))
+        ])
+//        context.console.output([
+//            ConsoleTextFragment(string: String.swifWebASCIILogo2, style: .init(color: .green, isBold: false))
+//        ])
+//        context.console.output([
+//            ConsoleTextFragment(string: String.swifWebASCIILogo3, style: .init(color: .green, isBold: false))
+//        ])
         if appType == .pwa && serviceWorkerTarget == nil {
             throw CommandError.error("You have to provide service target name for PWA. Use: -s ServiceTargetName")
         } else if appType != .pwa && serviceWorkerTarget != nil {
@@ -110,69 +132,100 @@ class BundleCommand: Command {
         
         // Instantiate webber context
         self.context = WebberContext(
+            customToolchain: signature.toolchain,
             dir: dir,
             command: context,
             verbose: signature.$verbose.isPresent,
+            debugVerbose: signature.$debugVerbose.isPresent,
             port: signature.port ?? 8888,
             browserType: signature.browserType,
             browserSelfSigned: signature.$browserSelfSigned.isPresent,
-            browserIncognito: signature.$browserIncognito.isPresent
+            browserIncognito: signature.$browserIncognito.isPresent,
+            console: context.console
         )
         
+        self.context.debugVerbose("Instantiate swift started")
         // Instantiate swift
         swift = Swift(try toolchain.pathToSwift(), self.context.dir.workingDirectory)
+        self.context.debugVerbose("Instantiate swift finished")
         
         // Printing swift version
+        self.context.debugVerbose("Printing swift version started")
         context.console.output("\n\(try swift.version())")
+        self.context.debugVerbose("Printing swift version finished")
 
         // Lookup product target
+        self.context.debugVerbose("Lookup product target started")
         if let appTarget = signature.appTarget {
             productTarget = signature.appTarget
             try swift.checkIfAppProductPresent(appTarget)
         } else {
             productTarget = try swift.lookupExecutableName(excluding: serviceWorkerTarget)
         }
+        self.context.debugVerbose("Lookup product target finished")
         
         // Check for service worker target
+        self.context.debugVerbose("Check for service worker target started")
         if appType == .pwa {
             if let sw = serviceWorkerTarget {
                 try swift.checkIfServiceWorkerProductPresent(sw)
             }
         }
+        self.context.debugVerbose("Check for service worker target finished")
         
         // Fill products array
+        self.context.debugVerbose("Fill products array started")
         products.append(productTarget)
         if let product = serviceWorkerTarget {
             products.append(product)
         }
+        self.context.debugVerbose("Fill products array finished")
         
         // Instantiate webber
+        self.context.debugVerbose("Instantiate webber object started")
         webber = try Webber(self.context)
+        self.context.debugVerbose("Instantiate webber object finished")
         
+        self.context.debugVerbose("Execute method started")
         try execute()
+        self.context.debugVerbose("Execute method finished")
         
         if serve {
+            self.context.debugVerbose("Watching for file changes")
             try watchForFileChanges()
+            self.context.debugVerbose("Spinning up the local server")
             try spinup()
         }
     }
     
     func execute() throws {
+        self.context.debugVerbose("Execute method: iterating products started (products.count: \(products.count)")
         try products.forEach { product in
             try build(product, alsoNative: serviceWorkerTarget == product)
         }
+        self.context.debugVerbose("Execute method: iterating products finished")
 		
+        self.context.debugVerbose("Execute method: dependencies installation started")
 		try webber.installDependencies()
+        self.context.debugVerbose("Execute method: dependencies installation finished")
 		
 		if !debug {
+            self.context.debugVerbose("Execute method: optimization started")
 			try products.forEach { product in
 				try optimize(product)
 			}
+            self.context.debugVerbose("Execute method: optimization finished")
 		}
         
+        self.context.debugVerbose("Execute method: cooking web files started")
         try cook()
+        self.context.debugVerbose("Execute method: cooking web files finished")
+        self.context.debugVerbose("Execute method: moving wasm files started")
         try moveWasmFiles()
+        self.context.debugVerbose("Execute method: moving wasm files finished")
+        self.context.debugVerbose("Execute method: moving resources started")
         try webber.moveResources(dev: debug)
+        self.context.debugVerbose("Execute method: moving resources finished")
     }
     
     /// Build swift into wasm (sync)

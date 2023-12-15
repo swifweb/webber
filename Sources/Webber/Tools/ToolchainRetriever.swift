@@ -75,6 +75,13 @@ class ToolchainRetriever {
             throw ToolchainRetrieverError.unableToPreapareURL
         }
         
+        if context.verbose {
+            self.context.command.console.output([
+                ConsoleTextFragment(string: "Toolchain Asset URL: ", style: .init(color: .brightYellow)),
+                ConsoleTextFragment(string: url.absoluteString, style: .init(color: .brightGreen)),
+            ])
+        }
+        
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         
