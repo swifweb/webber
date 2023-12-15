@@ -11,7 +11,7 @@ import NIOSSL
 import WasmTransformer
 
 final class VersionCommand: Command {
-    static var currentVersion = "1.7.0"
+    static var currentVersion = "1.7.1"
     
     struct Signature: CommandSignature {
         init() {}
