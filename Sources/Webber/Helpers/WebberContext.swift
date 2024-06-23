@@ -8,8 +8,10 @@
 import Vapor
 import ConsoleKit
 
+private var _defaultToolchainVersion = "wasm-5.10.0-RELEASE"
+
 class WebberContext {
-    private(set) lazy var defaultToolchainVersion = "wasm-5.10.0-RELEASE"
+    private(set) lazy var defaultToolchainVersion = _defaultToolchainVersion
     
     #if os(macOS)
     private(set) lazy var toolchainPaths: [String] = [
@@ -37,6 +39,7 @@ class WebberContext {
     let browserIncognito: Bool
     let console: Console
     let customSwiftVersion: String?
+    let ignoreCustomSwiftVersion: Bool
     
     lazy var toolchainFolder = "swift-" + toolchainVersion + toolchainExtension
     
@@ -64,6 +67,7 @@ class WebberContext {
         command: CommandContext,
         verbose: Bool,
         debugVerbose: Bool,
+        ignoreCustomSwiftVersion: Bool,
         port: Int,
         browserType: BrowserType?,
         browserSelfSigned: Bool,
@@ -79,15 +83,24 @@ class WebberContext {
             self.verbose = verbose
         }
         self.debugVerbose = debugVerbose
+        self.ignoreCustomSwiftVersion = ignoreCustomSwiftVersion
         self.port = port
         self.browserType = browserType
         self.browserSelfSigned = browserSelfSigned
         self.browserIncognito = browserIncognito
         self.console = console
-        let swiftVersionPath = URL(fileURLWithPath: dir.workingDirectory).appendingPathComponent(".swift-version").path
-        if let data = FileManager.default.contents(atPath: swiftVersionPath), let swiftVersion = String(data: data, encoding: .utf8), swiftVersion.hasPrefix("wasm-") {
-            let v = swiftVersion.trimmingCharacters(in: .whitespacesAndNewlines)
-            self.customSwiftVersion = v
+        if !ignoreCustomSwiftVersion {
+            let swiftVersionPath = URL(fileURLWithPath: dir.workingDirectory).appendingPathComponent(".swift-version").path
+            if let data = FileManager.default.contents(atPath: swiftVersionPath), let swiftVersion = String(data: data, encoding: .utf8), swiftVersion.hasPrefix("wasm-") {
+                let v = swiftVersion.trimmingCharacters(in: .whitespacesAndNewlines)
+                if _defaultToolchainVersion != v {
+                    self.customSwiftVersion = v
+                } else {
+                    self.customSwiftVersion = nil
+                }
+            } else {
+                self.customSwiftVersion = nil
+            }
         } else {
             self.customSwiftVersion = nil
         }

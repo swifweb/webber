@@ -79,6 +79,12 @@ class BundleCommand: Command {
         var debugVerbose: Bool?
         
         @Option(
+            name: "ignore-swift-version",
+            help: "Ignores .swift-version file."
+        )
+        var ignoreCustomSwiftVersion: Bool?
+        
+        @Option(
             name: "port",
             short: "p",
             help: "Port for webber server. Default is 8888."
@@ -137,6 +143,7 @@ class BundleCommand: Command {
             command: context,
             verbose: signature.$verbose.isPresent,
             debugVerbose: signature.$debugVerbose.isPresent,
+            ignoreCustomSwiftVersion: signature.$ignoreCustomSwiftVersion.isPresent,
             port: signature.port ?? 8888,
             browserType: signature.browserType,
             browserSelfSigned: signature.$browserSelfSigned.isPresent,
