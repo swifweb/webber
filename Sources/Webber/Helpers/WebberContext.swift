@@ -95,6 +95,10 @@ class WebberContext {
                 let v = swiftVersion.trimmingCharacters(in: .whitespacesAndNewlines)
                 if _defaultToolchainVersion != v {
                     self.customSwiftVersion = v
+                    // TODO: add check for silent mode
+                    console.output([
+                        ConsoleTextFragment(string: "Using .swift-version: \(v)", style: .init(color: .brightMagenta, isBold: true))
+                    ])
                 } else {
                     self.customSwiftVersion = nil
                 }
