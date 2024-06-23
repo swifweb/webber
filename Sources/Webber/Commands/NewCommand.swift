@@ -67,7 +67,7 @@ class NewCommand: Command {
         /.swiftpm
         """.data(using: .utf8))
         FileManager.default.createFile(atPath: newFolderPath.appending("/Package.swift"), contents: """
-        // swift-tools-version:5.7
+        // swift-tools-version:5.10
         import PackageDescription
 
         let package = Package(

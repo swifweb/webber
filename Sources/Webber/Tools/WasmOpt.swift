@@ -33,7 +33,7 @@ struct WasmOpt {
         let stdout = Pipe()
         let process = Process()
         process.launchPath = try Bash.which("wasm-opt")
-        process.arguments = ["-Os", wasmFileURL.path, "-o", wasmFileURL.path]
+        process.arguments = ["-Os", "--enable-bulk-memory", wasmFileURL.path, "-o", wasmFileURL.path]
         process.standardOutput = stdout
         
         let outHandle = stdout.fileHandleForReading

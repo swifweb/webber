@@ -114,14 +114,14 @@ class ToolchainRetriever {
                 ])
             }
             #if os(macOS)
-            guard let asset = tag.assets.first(where: { $0.name.contains("macos") && $0.name.contains(arch) }) else {
+            guard let asset = tag.assets.first(where: { $0.name.contains("macos") && $0.name.contains(arch) && !$0.name.contains("artifact") && $0.browser_download_url.absoluteString.hasSuffix(".pkg") }) else {
                 throw ToolchainRetrieverError.undecodableTag
             }
             return asset
             #else
             guard
                 let ubuntuRelease = self.ubuntuRelease,
-                let asset = tag.assets.first(where: { $0.name.contains(ubuntuRelease) && $0.name.contains(arch) })
+                let asset = tag.assets.first(where: { $0.name.contains(ubuntuRelease) && $0.name.contains(arch) && !$0.name.contains("artifact") })
             else {
                 throw ToolchainRetrieverError.unableToFindTagForCurrentOS
             }
