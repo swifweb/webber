@@ -71,7 +71,9 @@ class ToolchainRetriever {
     }
     
     func retrieve() throws -> URL {
-        guard let url = URL(string: "https://api.github.com/repos/swiftwasm/swift/releases/tags/swift-\(context.defaultToolchainVersion)") else {
+        var tag = context.customSwiftVersion ?? context.defaultToolchainVersion
+        
+        guard let url = URL(string: "https://api.github.com/repos/swiftwasm/swift/releases/tags/swift-\(tag)") else {
             throw ToolchainRetrieverError.unableToPreapareURL
         }
         

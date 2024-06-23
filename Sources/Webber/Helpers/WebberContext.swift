@@ -36,6 +36,7 @@ class WebberContext {
     let browserSelfSigned: Bool
     let browserIncognito: Bool
     let console: Console
+    let customSwiftVersion: String?
     
     lazy var toolchainFolder = "swift-" + toolchainVersion + toolchainExtension
     
@@ -54,11 +55,7 @@ class WebberContext {
             defaultToolchainVersion = "wasm-" + cleaned
             return defaultToolchainVersion
         }
-        let path = URL(fileURLWithPath: dir.workingDirectory).appendingPathComponent(".swift-version").path
-        guard let data = FileManager.default.contents(atPath: path), let str = String(data: data, encoding: .utf8), str.hasPrefix("wasm-") else {
-            return defaultToolchainVersion
-        }
-        return str
+        return customSwiftVersion ?? defaultToolchainVersion
     }
     
     init (
@@ -87,6 +84,13 @@ class WebberContext {
         self.browserSelfSigned = browserSelfSigned
         self.browserIncognito = browserIncognito
         self.console = console
+        let swiftVersionPath = URL(fileURLWithPath: dir.workingDirectory).appendingPathComponent(".swift-version").path
+        if let data = FileManager.default.contents(atPath: swiftVersionPath), let swiftVersion = String(data: data, encoding: .utf8), swiftVersion.hasPrefix("wasm-") {
+            let v = swiftVersion.trimmingCharacters(in: .whitespacesAndNewlines)
+            self.customSwiftVersion = v
+        } else {
+            self.customSwiftVersion = nil
+        }
     }
     
     func debugVerbose(_ text: String) {
