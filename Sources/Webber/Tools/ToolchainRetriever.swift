@@ -66,6 +66,10 @@ class ToolchainRetriever {
             return "ubuntu18.04"
         } else if str.contains("DISTRIB_RELEASE=20.04") {
             return "ubuntu20.04"
+        } else if str.contains("DISTRIB_RELEASE=22.04") {
+            return "ubuntu22.04"
+        } else if str.contains("DISTRIB_RELEASE=24.04") {
+            return "ubuntu24.04"
         }
         return nil
     }
